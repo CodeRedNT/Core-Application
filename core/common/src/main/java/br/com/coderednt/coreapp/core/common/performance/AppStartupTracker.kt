@@ -15,49 +15,38 @@ object AppStartupTracker {
         private set
     var appStartTimeNanos: Long = 0
         private set
-    var diEndTimeNanos: Long = 0
-        private set
     var appEndTimeNanos: Long = 0
         private set
-    var activityStartTimeNanos: Long = 0
-        private set
-    var uiEndTimeNanos: Long = 0
-        private set
 
-    var isFirstActivityLaunched: Boolean = false
     var isTtidReported: Boolean = false
 
     fun init() {
         if (providerStartTimeNanos == 0L) {
             providerStartTimeNanos = SystemClock.elapsedRealtimeNanos()
+            
             val kernelStartMs = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                 Process.getStartElapsedRealtime()
             } else 0L
-            processStartTimeNanos = if (kernelStartMs > 0) kernelStartMs * 1_000_000L else providerStartTimeNanos
+            
+            processStartTimeNanos = if (kernelStartMs > 0) {
+                kernelStartMs * 1_000_000L
+            } else {
+                providerStartTimeNanos - 100_000_000L // Fallback de 100ms
+            }
         }
     }
     
     fun markAppStart() {
-        if (appStartTimeNanos == 0L) appStartTimeNanos = SystemClock.elapsedRealtimeNanos()
-    }
-
-    fun markDiEnd() {
-        if (diEndTimeNanos == 0L) diEndTimeNanos = SystemClock.elapsedRealtimeNanos()
+        if (appStartTimeNanos == 0L) {
+            appStartTimeNanos = SystemClock.elapsedRealtimeNanos()
+        }
     }
 
     fun markAppEnd() {
-        if (appEndTimeNanos == 0L) appEndTimeNanos = SystemClock.elapsedRealtimeNanos()
+        if (appEndTimeNanos == 0L) {
+            appEndTimeNanos = SystemClock.elapsedRealtimeNanos()
+        }
     }
-
-    fun markActivityStart() {
-        if (activityStartTimeNanos == 0L) activityStartTimeNanos = SystemClock.elapsedRealtimeNanos()
-    }
-
-    fun markUiReady() {
-        if (uiEndTimeNanos == 0L) uiReadyTimeNanos = SystemClock.elapsedRealtimeNanos()
-    }
-    
-    private var uiReadyTimeNanos: Long = 0
 }
 
 class AppStartupProvider : ContentProvider() {

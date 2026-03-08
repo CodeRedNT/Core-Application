@@ -7,17 +7,23 @@ import br.com.coderednt.coreapp.features.performance.performance.PerformanceModu
 import br.com.coderednt.coreapp.performance.AppModuleInitializer
 import dagger.hilt.android.HiltAndroidApp
 
+/**
+ * Classe Application principal.
+ * Em um projeto profissional multimodular, esta classe deve ser minimalista,
+ * delegando inicializações para o Core e Features de forma desacoplada.
+ */
 @HiltAndroidApp
 class CoreApplication : BaseApplication() {
 
-    override fun AppHealthTracker.onCreateModules() {
-        sync {
+    override fun onCreateModules() {
+        // Inicialização explícita via DSL para total visibilidade do startup
+        appHealthTracker.sync {
             module<CommonModuleInitializer>()
             module<UiModuleInitializer>()
             module<AppModuleInitializer>()
         }
-        
-        async {
+
+        appHealthTracker.async {
             module<PerformanceModuleInitializer>()
         }
     }

@@ -6,8 +6,8 @@ import javax.inject.Singleton
 
 @Singleton
 class PerformanceModuleInitializer @Inject constructor() : ModuleInitializer {
-    override val name: String = "feature:performance"
-    override val isParallel: Boolean = true // Features podem ser carregadas em paralelo por padrão
+    override val name: String = "performance"
+
     override fun initialize() {
         // Inicialização específica da feature de performance
     }

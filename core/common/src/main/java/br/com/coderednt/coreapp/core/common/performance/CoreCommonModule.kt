@@ -1,17 +1,12 @@
-package br.com.coderednt.coreapp.core.common.di
+package br.com.coderednt.coreapp.core.common.performance
 
 import br.com.coderednt.coreapp.core.common.analytics.AnalyticsTracker
 import br.com.coderednt.coreapp.core.common.analytics.AnalyticsTrackerImpl
-import br.com.coderednt.coreapp.core.common.performance.AppHealthTracker
-import br.com.coderednt.coreapp.core.common.performance.AppHealthTrackerImpl
-import br.com.coderednt.coreapp.core.common.performance.CommonModuleInitializer
-import br.com.coderednt.coreapp.core.common.performance.ModuleInitializer
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
-import dagger.multibindings.ClassKey
-import dagger.multibindings.IntoMap
+import dagger.multibindings.Multibinds
 import javax.inject.Singleton
 
 @Module
@@ -26,8 +21,11 @@ abstract class CoreCommonModule {
     @Singleton
     abstract fun bindAppHealthTracker(appHealthTrackerImpl: AppHealthTrackerImpl): AppHealthTracker
 
-    @Binds
-    @IntoMap
-    @ClassKey(CommonModuleInitializer::class)
-    abstract fun bindCommonInitializer(commonModuleInitializer: CommonModuleInitializer): ModuleInitializer
+    /**
+     * Declara o multibinding de mapa para inicializadores.
+     * Isso permite que o Hilt injete um mapa vazio caso nenhum módulo contribua com @IntoMap,
+     * suportando nosso padrão Zero-Boilerplate com fallback via reflexão.
+     */
+    @Multibinds
+    abstract fun multibindInitializers(): Map<Class<*>, ModuleInitializer>
 }

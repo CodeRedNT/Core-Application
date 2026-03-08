@@ -25,9 +25,8 @@ abstract class BaseApplication : Application() {
         appHealthTracker.trackPhaseTime(StartupPhase.DI_INIT, diDuration)
 
         // --- MANIFESTO DSL (Sincronizado com o Boot do Manifest) ---
-        appHealthTracker.startManifest {
-            onCreateModules()
-        }
+        // Removido startManifest pois a interface AppHealthTracker foi simplificada
+        onCreateModules()
 
         // Marca o fim absoluto do Application.onCreate
         AppStartupTracker.markAppEnd()
@@ -48,5 +47,5 @@ abstract class BaseApplication : Application() {
      * Define os módulos a serem carregados durante o startup.
      * Deve ser implementado pela classe Application final.
      */
-    abstract fun AppHealthTracker.onCreateModules()
+    abstract fun onCreateModules()
 }

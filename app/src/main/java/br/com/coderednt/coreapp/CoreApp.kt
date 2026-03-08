@@ -6,49 +6,40 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Speed
-import androidx.compose.material3.Icon
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.ViewModel
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import br.com.coderednt.coreapp.core.common.performance.AppHealthTracker
 import br.com.coderednt.coreapp.core.ui.theme.CoreAppTheme
+import br.com.coderednt.coreapp.features.performance.navigation.NavigationObserver
 import br.com.coderednt.coreapp.features.performance.navigation.PERFORMANCE_ROUTE
 import br.com.coderednt.coreapp.navigation.CoreNavHost
-import br.com.coderednt.coreapp.navigation.NavigationActions
+import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 
+/**
+ * Orquestrador principal da UI do aplicativo.
+ * Responsável apenas pela estrutura de Scaffold e Navegação de alto nível.
+ */
 @Composable
-fun CoreApp(
-    appHealthTracker: AppHealthTracker
-) {
+fun CoreApp() {
     CoreAppTheme {
         val navController = rememberNavController()
-        val navActions = remember(navController) {
-            NavigationActions(navController)
-        }
-
         val navBackStackEntry by navController.currentBackStackEntryAsState()
         val currentDestination = navBackStackEntry?.destination
-
-        // --- TRACKING DE NAVEGAÇÃO ---
-        var navigationStartTime by remember { mutableLongStateOf(0L) }
         
-        LaunchedEffect(navBackStackEntry) {
-            navBackStackEntry?.let { entry ->
-                if (navigationStartTime > 0) {
-                    val duration = System.currentTimeMillis() - navigationStartTime
-                    val routeName = entry.destination.route ?: "unknown"
-                    appHealthTracker.trackRenderTime("Nav: $routeName", duration)
-                    navigationStartTime = 0L // Reset
-                }
-            }
+        // Injeta o observador de performance para navegação
+        val navigationViewModel: PerformanceNavigationViewModel = hiltViewModel()
+        val navigationObserver = navigationViewModel.observer
+
+        // Instala o observador no NavController
+        LaunchedEffect(navController) {
+            navigationObserver.install(navController)
         }
 
         Scaffold(
@@ -61,7 +52,7 @@ fun CoreApp(
                         label = { Text("Home") },
                         selected = currentDestination?.hierarchy?.any { it.route == "games_route" } == true,
                         onClick = {
-                            navigationStartTime = System.currentTimeMillis()
+                            navigationObserver.markStart()
                             navController.navigate("games_route") {
                                 popUpTo(navController.graph.findStartDestination().id) {
                                     saveState = true
@@ -76,7 +67,7 @@ fun CoreApp(
                         label = { Text("Performance") },
                         selected = currentDestination?.hierarchy?.any { it.route == PERFORMANCE_ROUTE } == true,
                         onClick = {
-                            navigationStartTime = System.currentTimeMillis()
+                            navigationObserver.markStart()
                             navController.navigate(PERFORMANCE_ROUTE) {
                                 popUpTo(navController.graph.findStartDestination().id) {
                                     saveState = true
@@ -96,3 +87,11 @@ fun CoreApp(
         }
     }
 }
+
+/**
+ * ViewModel auxiliar para prover o NavigationObserver via Hilt no Compose.
+ */
+@HiltViewModel
+class PerformanceNavigationViewModel @Inject constructor(
+    val observer: NavigationObserver
+) : ViewModel()

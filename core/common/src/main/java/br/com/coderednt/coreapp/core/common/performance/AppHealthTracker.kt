@@ -13,12 +13,9 @@ data class HealthMetrics(
     val moduleLoadTimes: Map<String, Double> = emptyMap(),
     val parallelModuleLoadTimes: Map<String, Double> = emptyMap(),
     val renderTimes: Map<String, Long> = emptyMap(),
+    val navigationTimes: Map<String, Long> = emptyMap(),
     val lastError: String? = null
 ) {
-    /**
-     * TTID Centralizado: A soma exata de todas as fases síncronas que compõem o startup.
-     * Isso garante que não existam divergências no Dashboard.
-     */
     val startupTimeMs: Double 
         get() = osOverheadTimeMs + providerInitTimeMs + diInitializationTimeMs + 
                 appOnCreateTimeMs + moduleLoadTimes.values.sum() + 
@@ -28,15 +25,11 @@ data class HealthMetrics(
 interface AppHealthTracker {
     val metrics: StateFlow<HealthMetrics>
     fun trackRenderTime(screenName: String, timeMillis: Long)
+    fun trackNavigationTime(route: String, durationMs: Long)
     fun trackPhaseTime(phase: StartupPhase, durationMs: Double)
     fun trackError(message: String)
+    fun loadModule(initializer: ModuleInitializer, isParallel: Boolean = false)
     fun <T : ModuleInitializer> load(clazz: Class<T>, isParallel: Boolean = false)
-    fun loadModule(initializer: ModuleInitializer)
-    fun loadModules(
-        sync: List<Class<out ModuleInitializer>>,
-        async: List<Class<out ModuleInitializer>>
-    )
-    fun startManifest(block: AppHealthTracker.() -> Unit)
     fun trackAppStartup()
 }
 
@@ -49,6 +42,8 @@ enum class StartupPhase {
     UI_INFLATION,
     SPLASH_SCREEN
 }
+
+// --- DSL de Inicialização ---
 
 class ModuleLoaderScope(val tracker: AppHealthTracker, val isParallel: Boolean) {
     inline fun <reified T : ModuleInitializer> module() {

@@ -5,7 +5,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ExpandLess
@@ -69,8 +68,7 @@ fun PerformanceDashboardScreen(
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
 
     val ttfdValue = uiState.renderTimes["MainActivity"] ?: uiState.renderTimes["MainScreen"] ?: 0L
-    val otherRenders = uiState.renderTimes.filter { it.key != "MainActivity" && it.key != "MainScreen" }
-
+    
     val ttidRating = getTtidRating(uiState.startupTimeMs)
     val ttfdRating = getTtfdRating(ttfdValue)
 
@@ -101,6 +99,7 @@ fun PerformanceDashboardScreen(
                 )
             }
 
+            // --- TTFD: TIME TO FULLY DRAWN ---
             item {
                 MetricCard(
                     title = "Main Screen (TTFD)",
@@ -112,7 +111,28 @@ fun PerformanceDashboardScreen(
                 )
             }
 
-            item { Spacer(modifier = Modifier.padding(vertical = 4.dp)) }
+            // --- NAVEGAÇÃO ENTRE TELAS ---
+            if (uiState.navigationTimes.isNotEmpty()) {
+                item {
+                    val avgNav = uiState.navigationTimes.values.average()
+                    ExpandableSection(
+                        title = "Navigation Vitals",
+                        totalTime = formatDuration(avgNav),
+                        totalLabel = "Avg Delay"
+                    ) {
+                        uiState.navigationTimes.forEach { (route, time) ->
+                            MetricCard(
+                                title = route,
+                                value = formatDuration(time.toDouble()),
+                                icon = Icons.Rounded.Navigation,
+                                description = "Transition Delay",
+                                containerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.3f),
+                                contentColor = MaterialTheme.colorScheme.tertiary
+                            )
+                        }
+                    }
+                }
+            }
 
             item {
                 val moduleSyncTotal = uiState.moduleLoadTimes.values.sum()
@@ -162,20 +182,6 @@ fun PerformanceDashboardScreen(
                 }
             }
 
-            if (otherRenders.isNotEmpty()) {
-                item {
-                    val totalOther = otherRenders.values.sum().toDouble()
-                    ExpandableSection(
-                        title = "Other Screen Renders",
-                        totalTime = formatDuration(totalOther)
-                    ) {
-                        otherRenders.forEach { (screen, time) ->
-                            MetricCard(title = screen, value = formatDuration(time.toDouble()), icon = Icons.Rounded.Timer)
-                        }
-                    }
-                }
-            }
-
             item {
                 Spacer(modifier = Modifier.height(16.dp))
                 VitalsLegendTable()
@@ -203,9 +209,6 @@ fun VitalsLegendTable() {
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text("Android Vitals Legend", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-            Spacer(modifier = Modifier.height(8.dp))
-            Text("TTID: Time to Initial Display", style = MaterialTheme.typography.labelSmall)
-            Text("TTFD: Time to Fully Drawn", style = MaterialTheme.typography.labelSmall)
             Spacer(modifier = Modifier.height(12.dp))
             LegendRow("Good", Color(0xFF4CAF50), "TTID < 2s / TTFD < 3s")
             LegendRow("Fair", Color(0xFFFFC107), "TTID < 5s / TTFD < 6s")
@@ -225,13 +228,18 @@ fun LegendRow(label: String, color: Color, range: String) {
 }
 
 @Composable
-fun ExpandableSection(title: String, totalTime: String, content: @Composable () -> Unit) {
+fun ExpandableSection(
+    title: String, 
+    totalTime: String, 
+    totalLabel: String = "Total",
+    content: @Composable () -> Unit
+) {
     var expanded by remember { mutableStateOf(false) }
     Column(modifier = Modifier.fillMaxWidth().clickable { expanded = !expanded }.padding(vertical = 8.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(text = title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                Text(text = "Total: $totalTime", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
+                Text(text = "$totalLabel: $totalTime", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
             }
             Icon(imageVector = if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore, contentDescription = null)
         }

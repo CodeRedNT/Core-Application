@@ -4,6 +4,7 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.google.devtools.ksp)
     alias(libs.plugins.hilt)
+    id("maven-publish")
 }
 
 android {
@@ -27,6 +28,12 @@ android {
     buildFeatures {
         compose = true
     }
+    
+    publishing {
+        singleVariant("release") {
+            withSourcesJar()
+        }
+    }
 }
 
 dependencies {
@@ -36,7 +43,8 @@ dependencies {
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.runtime)
 
-    implementation(libs.hilt.android)
+    // Usando 'api' para que módulos que dependem do common (como o :app) herdem o Hilt
+    api(libs.hilt.android)
     ksp(libs.hilt.compiler)
     
     implementation(libs.androidx.metrics.performance)
@@ -44,4 +52,20 @@ dependencies {
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
+}
+
+afterEvaluate {
+    publishing {
+        publications {
+            register<MavenPublication>("release") {
+                groupId = "br.com.coderednt.sdk"
+                artifactId = "core-common"
+                version = "1.0.0"
+
+                afterEvaluate {
+                    from(components["release"])
+                }
+            }
+        }
+    }
 }
