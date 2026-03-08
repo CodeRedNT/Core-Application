@@ -1,5 +1,6 @@
 package br.com.coderednt.coreapp.features.performance.internal
 
+import android.util.Log
 import br.com.coderednt.coreapp.core.monitoring.analytics.AnalyticsTracker
 import br.com.coderednt.coreapp.core.monitoring.performance.*
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -13,7 +14,7 @@ import javax.inject.Singleton
 @Singleton
 class AppHealthTrackerImpl @Inject constructor(
     private val analyticsTracker: AnalyticsTracker,
-    private val initializers: Map<Class<*>, @JvmSuppressWildcards Provider<ModuleInitializer>>
+    private val initializers: Map<Class<out ModuleInitializer>, @JvmSuppressWildcards Provider<ModuleInitializer>>
 ) : AppHealthTracker {
 
     private val _metrics = MutableStateFlow(HealthMetrics())
@@ -25,10 +26,13 @@ class AppHealthTrackerImpl @Inject constructor(
 
     override fun onAppEnd() {
         AppStartupTracker.markAppEnd()
-        // Captura a memória logo após o fim do onCreate da Application
         val runtime = Runtime.getRuntime()
         val initialUsed = (runtime.totalMemory() - runtime.freeMemory()) / (1024.0 * 1024.0)
-        _metrics.update { it.copy(memory = it.memory.copy(initialMemoryMb = initialUsed)) }
+        
+        // Captura o nível inicial de bateria para cálculo de queda
+        _metrics.update { 
+            it.copy(memory = it.memory.copy(initialMemoryMb = initialUsed))
+        }
     }
 
     private fun refreshStartupMetrics() {
@@ -102,7 +106,11 @@ class AppHealthTrackerImpl @Inject constructor(
     }
 
     override fun trackBattery(metrics: BatteryMetrics) {
-        _metrics.update { it.copy(battery = metrics) }
+        _metrics.update { 
+            // Se for o primeiro registro de nível, salvamos como nível inicial
+            val initialLevel = if (it.battery.initialLevel == -1) metrics.level else it.battery.initialLevel
+            it.copy(battery = metrics.copy(initialLevel = initialLevel))
+        }
     }
 
     override fun trackError(message: String) {
@@ -113,6 +121,14 @@ class AppHealthTrackerImpl @Inject constructor(
         val provider = initializers[clazz]
         if (provider != null) {
             loadModule(provider.get(), isParallel)
+        } else {
+            Log.w("AppHealthTracker", "Initializer not found in Hilt map: ${clazz.simpleName}")
+            try {
+                val instance = clazz.getDeclaredConstructor().newInstance()
+                loadModule(instance, isParallel)
+            } catch (e: Exception) {
+                trackError("Falha ao instanciar modulo ${clazz.simpleName}: ${e.message}")
+            }
         }
     }
 

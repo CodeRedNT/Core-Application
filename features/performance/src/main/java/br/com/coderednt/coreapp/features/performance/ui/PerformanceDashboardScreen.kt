@@ -143,6 +143,44 @@ fun StartupTabContent(uiState: HealthMetrics) {
                 }
             }
         }
+        
+        if (uiState.moduleLoadTimes.isNotEmpty()) {
+            item {
+                val totalSync = uiState.moduleLoadTimes.values.sum()
+                ExpandableSection(
+                    title = "Module Costs (Sync)", 
+                    totalTime = formatDuration(totalSync)
+                ) {
+                    uiState.moduleLoadTimes.forEach { (module, time) ->
+                        MetricCard(
+                            title = module, 
+                            value = formatDuration(time), 
+                            icon = Icons.Rounded.Timer,
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
+                        )
+                    }
+                }
+            }
+        }
+
+        if (uiState.parallelModuleLoadTimes.isNotEmpty()) {
+            item {
+                val totalAsync = uiState.parallelModuleLoadTimes.values.sum()
+                ExpandableSection(
+                    title = "Module Costs (Async)", 
+                    totalTime = formatDuration(totalAsync)
+                ) {
+                    uiState.parallelModuleLoadTimes.forEach { (module, time) ->
+                        MetricCard(
+                            title = module, 
+                            value = formatDuration(time), 
+                            icon = Icons.Rounded.Bolt,
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
+                        )
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -165,10 +203,10 @@ fun MemoryTabContent(uiState: HealthMetrics) {
         item {
             val usagePct = if (uiState.memory.totalHeapMb > 0) (uiState.memory.usedHeapMb / uiState.memory.totalHeapMb) else 0.0
             MetricCard(
-                title = "Current JVM Heap",
+                title = "App Memory Usage (Live)",
                 value = "${String.format(Locale.US, "%.1f", uiState.memory.usedHeapMb)} MB",
                 icon = Icons.Rounded.Memory,
-                description = "Max Available: ${uiState.memory.totalHeapMb.toInt()} MB",
+                description = "Current JVM Heap - Max: ${uiState.memory.totalHeapMb.toInt()} MB",
                 containerColor = if (usagePct > 0.8) Color(0xFFF44336).copy(alpha = 0.1f) else MaterialTheme.colorScheme.surfaceVariant
             )
         }
@@ -245,10 +283,31 @@ fun BatteryTabContent(uiState: HealthMetrics) {
     ) {
         item {
             MetricCard(
-                title = "Battery Level",
+                title = "App Battery Consumption",
+                value = "${uiState.battery.dropPercentage}%",
+                icon = Icons.Rounded.DataUsage,
+                description = "Drop since app startup",
+                containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.2f),
+                contentColor = MaterialTheme.colorScheme.error
+            )
+        }
+        item {
+            MetricCard(
+                title = "Device Battery Level",
                 value = "${uiState.battery.level}%",
                 icon = if (uiState.battery.isCharging) Icons.Rounded.BatteryChargingFull else Icons.Rounded.BatteryStd,
-                description = "Status: ${if (uiState.battery.isCharging) "Charging" else "Discharging"}"
+                description = "Status: ${if (uiState.battery.isCharging) "Charging" else "Discharging"}",
+                containerColor = if (uiState.battery.level < 20) Color(0xFFF44336).copy(alpha = 0.1f) else MaterialTheme.colorScheme.surfaceVariant
+            )
+        }
+        item {
+            MetricCard(
+                title = "Current Consumption (Live)",
+                value = "${uiState.battery.currentNowMa} mA",
+                icon = Icons.Rounded.ElectricBolt,
+                description = "Current flow from/to battery",
+                containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.2f),
+                contentColor = MaterialTheme.colorScheme.primary
             )
         }
         item {
@@ -262,7 +321,6 @@ fun BatteryTabContent(uiState: HealthMetrics) {
     }
 }
 
-// --- Rating & Helpers ---
 enum class PerformanceRating(val label: String, val color: @Composable () -> Color) {
     GOOD("Good", { Color(0xFF4CAF50) }), FAIR("Fair", { Color(0xFFFFC107) }), POOR("Poor", { Color(0xFFF44336) })
 }

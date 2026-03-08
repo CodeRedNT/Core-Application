@@ -19,11 +19,20 @@ data class MemoryMetrics(
  * Representa o estado da bateria do dispositivo.
  */
 data class BatteryMetrics(
+    val initialLevel: Int = -1,
     val level: Int = -1,
     val isCharging: Boolean = false,
     val temperature: Float = 0f,
-    val health: String = "Unknown"
-)
+    val health: String = "Unknown",
+    val currentNowMa: Int = 0 // Consumo instantâneo em mA
+) {
+    /**
+     * Calcula a queda de bateria desde o início do app.
+     * Retorna 0 se estiver carregando ou se o nível inicial não foi capturado.
+     */
+    val dropPercentage: Int
+        get() = if (initialLevel > 0 && level > 0 && initialLevel > level) initialLevel - level else 0
+}
 
 /**
  * Modelo consolidado de todas as métricas de saúde do aplicativo.

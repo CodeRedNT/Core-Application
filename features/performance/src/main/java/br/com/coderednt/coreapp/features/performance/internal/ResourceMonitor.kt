@@ -4,6 +4,7 @@ import android.app.ActivityManager
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Context.ACTIVITY_SERVICE
+import android.content.Context.BATTERY_SERVICE
 import android.content.Intent
 import android.content.IntentFilter
 import android.os.BatteryManager
@@ -35,20 +36,21 @@ class ResourceMonitor @Inject constructor(
         
         Log.d("ResourceMonitor", "Iniciando monitoramento de recursos...")
 
-        // Monitoramento de Memória (periódico)
+        // Monitoramento de Memória e Bateria Live (periódico)
         scope.launch {
             while (isActive) {
                 try {
                     collectMemoryMetrics()
+                    collectBatteryLiveMetrics()
                     checkGC()
                 } catch (e: Exception) {
                     Log.e("ResourceMonitor", "Erro ao coletar métricas", e)
                 }
-                delay(5000)
+                delay(2000) 
             }
         }
 
-        // Monitoramento de Bateria
+        // Monitoramento de Bateria (via Broadcast para eventos de sistema)
         try {
             val filter = IntentFilter(Intent.ACTION_BATTERY_CHANGED)
             context.registerReceiver(batteryReceiver, filter)
@@ -84,14 +86,28 @@ class ResourceMonitor @Inject constructor(
         )
     }
 
-    // Sentinela para detecção de GC
+    /**
+     * Coleta métricas de consumo instantâneo de bateria.
+     */
+    private fun collectBatteryLiveMetrics() {
+        val batteryManager = context.getSystemService(BATTERY_SERVICE) as? BatteryManager
+        batteryManager?.let {
+            // BATTERY_PROPERTY_CURRENT_NOW: Microamperes (μA)
+            // Convertemos para mA (dividir por 1000)
+            val currentNow = it.getIntProperty(BatteryManager.BATTERY_PROPERTY_CURRENT_NOW) / 1000
+            
+            // Atualizamos apenas o consumo live se já temos os outros dados do receiver
+            val currentMetrics = appHealthTracker.metrics.value.battery
+            appHealthTracker.trackBattery(currentMetrics.copy(currentNowMa = currentNow))
+        }
+    }
+
     private var gcSentinel = WeakReference(Any())
     
     private fun checkGC() {
         if (gcSentinel.get() == null) {
-            Log.d("ResourceMonitor", "Garbage Collector detectado!")
             appHealthTracker.notifyGC()
-            gcSentinel = WeakReference(Any()) // Reinicia o sentinela
+            gcSentinel = WeakReference(Any()) 
         }
     }
 
@@ -104,12 +120,16 @@ class ResourceMonitor @Inject constructor(
             val isCharging = status == BatteryManager.BATTERY_STATUS_CHARGING || status == BatteryManager.BATTERY_STATUS_FULL
             val batteryPct = if (scale > 0) (level / scale.toFloat() * 100).toInt() else level
 
+            val currentNow = (context.getSystemService(BATTERY_SERVICE) as? BatteryManager)
+                ?.getIntProperty(BatteryManager.BATTERY_PROPERTY_CURRENT_NOW) ?: 0
+
             appHealthTracker.trackBattery(
                 BatteryMetrics(
                     level = batteryPct,
                     isCharging = isCharging,
                     temperature = temp,
-                    health = getBatteryHealth(intent.getIntExtra(BatteryManager.EXTRA_HEALTH, -1))
+                    health = getBatteryHealth(intent.getIntExtra(BatteryManager.EXTRA_HEALTH, -1)),
+                    currentNowMa = currentNow / 1000
                 )
             )
         }
