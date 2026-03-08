@@ -9,6 +9,9 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.os.BatteryManager
 import android.util.Log
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.ProcessLifecycleOwner
 import br.com.coderednt.coreapp.core.monitoring.performance.AppHealthTracker
 import br.com.coderednt.coreapp.core.monitoring.performance.BatteryMetrics
 import br.com.coderednt.coreapp.core.monitoring.performance.MemoryMetrics
@@ -21,6 +24,7 @@ import javax.inject.Singleton
 /**
  * Monitor de recursos do sistema (Memória e Bateria).
  * Coleta dados periodicamente e detecta limpezas do GC.
+ * Refatorado para respeitar o ciclo de vida do Processo (Lifecycle-Aware).
  */
 @Singleton
 class ResourceMonitor @Inject constructor(
@@ -29,15 +33,45 @@ class ResourceMonitor @Inject constructor(
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private var isMonitoring = false
+    private var collectionJob: Job? = null
+    private var isAppInForeground = false
+
+    private val lifecycleObserver = LifecycleEventObserver { _, event ->
+        when (event) {
+            Lifecycle.Event.ON_START -> {
+                isAppInForeground = true
+                startPeriodicCollection()
+            }
+            Lifecycle.Event.ON_STOP -> {
+                isAppInForeground = false
+                stopPeriodicCollection()
+            }
+            else -> {}
+        }
+    }
 
     fun startMonitoring() {
         if (isMonitoring) return
         isMonitoring = true
         
-        Log.d("ResourceMonitor", "Iniciando monitoramento de recursos...")
+        Log.d("ResourceMonitor", "Iniciando monitoramento de recursos com Lifecycle-Aware...")
 
-        // Monitoramento de Memória e Bateria Live (periódico)
-        scope.launch {
+        // Observa o ciclo de vida do processo global
+        ProcessLifecycleOwner.get().lifecycle.addObserver(lifecycleObserver)
+
+        // Monitoramento de Bateria (via Broadcast - eventos passivos não consomem muito)
+        try {
+            val filter = IntentFilter(Intent.ACTION_BATTERY_CHANGED)
+            context.registerReceiver(batteryReceiver, filter)
+        } catch (e: Exception) {
+            Log.e("ResourceMonitor", "Erro no receiver de bateria", e)
+        }
+    }
+
+    private fun startPeriodicCollection() {
+        if (collectionJob?.isActive == true) return
+        
+        collectionJob = scope.launch {
             while (isActive) {
                 try {
                     collectMemoryMetrics()
@@ -46,17 +80,15 @@ class ResourceMonitor @Inject constructor(
                 } catch (e: Exception) {
                     Log.e("ResourceMonitor", "Erro ao coletar métricas", e)
                 }
-                delay(2000) 
+                delay(3000) // Aumentado para 3s para maior eficiência
             }
         }
+    }
 
-        // Monitoramento de Bateria (via Broadcast para eventos de sistema)
-        try {
-            val filter = IntentFilter(Intent.ACTION_BATTERY_CHANGED)
-            context.registerReceiver(batteryReceiver, filter)
-        } catch (e: Exception) {
-            Log.e("ResourceMonitor", "Erro no receiver de bateria", e)
-        }
+    private fun stopPeriodicCollection() {
+        collectionJob?.cancel()
+        collectionJob = null
+        Log.d("ResourceMonitor", "Monitoramento periódico pausado (App em background)")
     }
 
     private fun collectMemoryMetrics() {
@@ -86,17 +118,10 @@ class ResourceMonitor @Inject constructor(
         )
     }
 
-    /**
-     * Coleta métricas de consumo instantâneo de bateria.
-     */
     private fun collectBatteryLiveMetrics() {
         val batteryManager = context.getSystemService(BATTERY_SERVICE) as? BatteryManager
         batteryManager?.let {
-            // BATTERY_PROPERTY_CURRENT_NOW: Microamperes (μA)
-            // Convertemos para mA (dividir por 1000)
             val currentNow = it.getIntProperty(BatteryManager.BATTERY_PROPERTY_CURRENT_NOW) / 1000
-            
-            // Atualizamos apenas o consumo live se já temos os outros dados do receiver
             val currentMetrics = appHealthTracker.metrics.value.battery
             appHealthTracker.trackBattery(currentMetrics.copy(currentNowMa = currentNow))
         }

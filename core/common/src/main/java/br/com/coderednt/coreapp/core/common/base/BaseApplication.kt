@@ -1,7 +1,7 @@
 package br.com.coderednt.coreapp.core.common.base
 
 import android.app.Application
-import android.os.SystemClock
+import br.com.coderednt.coreapp.core.common.util.TimeUtils
 import br.com.coderednt.coreapp.core.monitoring.performance.*
 import javax.inject.Inject
 import kotlin.system.exitProcess
@@ -16,15 +16,14 @@ abstract class BaseApplication : Application() {
     lateinit var appHealthTracker: AppHealthTracker
 
     override fun onCreate() {
-        // 1. Marca o início real do método
-        val startOnCreate = System.nanoTime()
+        // 1. Marca o início real do método usando a padronização de tempo
+        val startOnCreate = TimeUtils.nowNanos()
         
         // 2. super.onCreate() é onde o Hilt realiza a injeção de membros.
-        // Em Release, o R8 otimiza isso drasticamente, mas ainda há um custo.
         super.onCreate()
         
         // 3. Agora que o appHealthTracker foi injetado, calculamos o tempo gasto no super
-        val diDurationMs = (System.nanoTime() - startOnCreate) / 1_000_000.0
+        val diDurationMs = TimeUtils.calculateDurationFrom(startOnCreate)
         
         setupErrorHandling()
         

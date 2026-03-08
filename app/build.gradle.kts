@@ -20,15 +20,12 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
-    // Definimos a dimensão para separar ambientes de execução
     flavorDimensions += "environment"
     productFlavors {
         create("dev") {
             dimension = "environment"
             applicationIdSuffix = ".dev"
             versionNameSuffix = "-dev"
-            
-            // Exemplo de campo customizado para identificar o ambiente no código
             buildConfigField("String", "ENV", "\"DEV\"")
             buildConfigField("String", "BASE_URL", "\"https://api-dev.coderednt.com/\"")
         }
@@ -36,14 +33,11 @@ android {
             dimension = "environment"
             applicationIdSuffix = ".staging"
             versionNameSuffix = "-staging"
-            
             buildConfigField("String", "ENV", "\"STAGING\"")
             buildConfigField("String", "BASE_URL", "\"https://api-staging.coderednt.com/\"")
         }
         create("prod") {
             dimension = "environment"
-            // Sem sufixo para o ID de produção oficial
-            
             buildConfigField("String", "ENV", "\"PROD\"")
             buildConfigField("String", "BASE_URL", "\"https://api.coderednt.com/\"")
         }
@@ -57,17 +51,12 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            signingConfig = signingConfigs.getByName("debug") // Ajustar para signing oficial no futuro
+            signingConfig = signingConfigs.getByName("debug")
         }
-        
         getByName("debug") {
-            // Removemos o sufixo .debug aqui para evitar br.com.coderednt.dev.debug
-            // O sufixo do flavor (ex: .dev) já é suficiente para coexistência.
             applicationIdSuffix = "" 
             isDebuggable = true
         }
-
-        // Criamos um build type de benchmark ou profile se necessário futuramente
     }
     
     compileOptions {
@@ -108,7 +97,11 @@ dependencies {
     implementation(libs.androidx.hilt.navigation.compose)
     ksp(libs.hilt.compiler)
 
+    // Test dependencies
     testImplementation(libs.junit)
+    testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation("io.mockk:mockk:1.13.12")
+
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))

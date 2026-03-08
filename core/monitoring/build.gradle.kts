@@ -33,4 +33,7 @@ dependencies {
     
     // Coroutines (necessário para StateFlow no AppHealthTracker)
     implementation(libs.kotlinx.coroutines.android)
+
+    // Test dependencies
+    testImplementation(libs.junit)
 }

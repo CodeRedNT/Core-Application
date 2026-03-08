@@ -1,7 +1,7 @@
 package br.com.coderednt.coreapp.features.performance.internal
 
-import android.os.SystemClock
 import android.view.View
+import br.com.coderednt.coreapp.core.common.util.TimeUtils
 import br.com.coderednt.coreapp.core.monitoring.performance.AppHealthTracker
 import br.com.coderednt.coreapp.core.monitoring.performance.PerformanceMonitor
 import br.com.coderednt.coreapp.core.monitoring.performance.StartupPhase
@@ -13,19 +13,19 @@ class PerformanceMonitorImpl @Inject constructor(
     private val appHealthTracker: AppHealthTracker
 ) : PerformanceMonitor {
 
-    private var onCreateStartTime: Long = 0
+    private var onCreateStartNanos: Long = 0
 
-    override fun onStartActivityTracking(startTimeMillis: Long) {
-        onCreateStartTime = startTimeMillis
+    override fun onStartActivityTracking(startTimeNanos: Long) {
+        onCreateStartNanos = startTimeNanos
         
         if (AppStartupTracker.appEndTimeNanos > 0) {
-            val launchDelay = (SystemClock.elapsedRealtimeNanos() - AppStartupTracker.appEndTimeNanos) / 1_000_000.0
+            val launchDelay = TimeUtils.nanosToMillis(TimeUtils.nowNanos() - AppStartupTracker.appEndTimeNanos)
             appHealthTracker.trackPhaseTime(StartupPhase.ACTIVITY_LAUNCH, launchDelay)
         }
     }
 
     override fun onTrackUiInflation(startNano: Long) {
-        val durationMs = (System.nanoTime() - startNano) / 1_000_000.0
+        val durationMs = TimeUtils.nanosToMillis(TimeUtils.nowNanos() - startNano)
         appHealthTracker.trackPhaseTime(StartupPhase.UI_INFLATION, durationMs)
         
         if (!AppStartupTracker.isTtidReported) {
@@ -36,13 +36,14 @@ class PerformanceMonitorImpl @Inject constructor(
 
     override fun onTrackRenderTime(activityName: String, decorView: View) {
         decorView.post {
-            val renderTime = SystemClock.elapsedRealtime() - onCreateStartTime
-            appHealthTracker.trackRenderTime(activityName, renderTime)
+            val renderTimeMs = TimeUtils.nanosToMillis(TimeUtils.nowNanos() - onCreateStartNanos)
+            appHealthTracker.trackRenderTime(activityName, renderTimeMs.toLong())
         }
     }
 
     override fun onJankDetected(activityName: String, durationMs: Long) {
-        appHealthTracker.trackError("Jank detected in $activityName: ${durationMs}ms")
+        // Agora reporta especificamente como Jank, sem poluir o log de erros/crashes
+        appHealthTracker.trackJank(activityName)
     }
 
     override fun onTrackPhase(phase: StartupPhase, durationMs: Double) {

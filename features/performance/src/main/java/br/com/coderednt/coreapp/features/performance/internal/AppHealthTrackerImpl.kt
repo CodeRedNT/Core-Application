@@ -1,16 +1,22 @@
 package br.com.coderednt.coreapp.features.performance.internal
 
 import android.util.Log
+import br.com.coderednt.coreapp.core.common.util.TimeUtils
 import br.com.coderednt.coreapp.core.monitoring.analytics.AnalyticsTracker
 import br.com.coderednt.coreapp.core.monitoring.performance.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import java.util.Collections
 import javax.inject.Inject
 import javax.inject.Provider
 import javax.inject.Singleton
 
+/**
+ * Implementação orquestradora do AppHealthTracker com suporte a Safe Initializers.
+ * Centraliza o estado das métricas e delega a lógica de atualização.
+ */
 @Singleton
 class AppHealthTrackerImpl @Inject constructor(
     private val analyticsTracker: AnalyticsTracker,
@@ -19,6 +25,12 @@ class AppHealthTrackerImpl @Inject constructor(
 
     private val _metrics = MutableStateFlow(HealthMetrics())
     override val metrics: StateFlow<HealthMetrics> = _metrics.asStateFlow()
+
+    // Controle de Safe Initializers (Prevenção de dependência circular e re-inicialização)
+    private val initializedModules = Collections.synchronizedSet(mutableSetOf<String>())
+    private val initializationStack = Collections.synchronizedList(mutableListOf<String>())
+
+    // --- Métricas de Ciclo de Vida do App ---
 
     override fun onAppStart() {
         AppStartupTracker.markAppStart()
@@ -29,58 +41,70 @@ class AppHealthTrackerImpl @Inject constructor(
         val runtime = Runtime.getRuntime()
         val initialUsed = (runtime.totalMemory() - runtime.freeMemory()) / (1024.0 * 1024.0)
         
-        // Captura o nível inicial de bateria para cálculo de queda
         _metrics.update { 
             it.copy(memory = it.memory.copy(initialMemoryMb = initialUsed))
         }
     }
 
-    private fun refreshStartupMetrics() {
-        val osOverhead = (AppStartupTracker.providerStartTimeNanos - AppStartupTracker.processStartTimeNanos) / 1_000_000.0
-        val providerInit = (AppStartupTracker.appStartTimeNanos - AppStartupTracker.providerStartTimeNanos) / 1_000_000.0
-        val appInit = (AppStartupTracker.appEndTimeNanos - AppStartupTracker.appStartTimeNanos) / 1_000_000.0
+    override fun trackAppStartup() {
+        val osOverhead = TimeUtils.nanosToMillis(AppStartupTracker.providerStartTimeNanos - AppStartupTracker.processStartTimeNanos)
+        val providerInit = TimeUtils.nanosToMillis(AppStartupTracker.appStartTimeNanos - AppStartupTracker.providerStartTimeNanos)
+        val appInit = TimeUtils.nanosToMillis(AppStartupTracker.appEndTimeNanos - AppStartupTracker.appStartTimeNanos)
         
         _metrics.update { 
-            it.copy(
-                osOverheadTimeMs = if (osOverhead > 0) osOverhead else it.osOverheadTimeMs,
-                providerInitTimeMs = if (providerInit > 0) providerInit else it.providerInitTimeMs,
-                appOnCreateTimeMs = if (appInit > 0) appInit else it.appOnCreateTimeMs
+            val updatedStartup = it.startup.copy(
+                osOverheadTimeMs = if (osOverhead > 0) osOverhead else it.startup.osOverheadTimeMs,
+                providerInitTimeMs = if (providerInit > 0) providerInit else it.startup.providerInitTimeMs,
+                appOnCreateTimeMs = if (appInit > 0) appInit else it.startup.appOnCreateTimeMs
             )
+            it.copy(startup = updatedStartup)
         }
-    }
-    
-    override fun trackRenderTime(screenName: String, timeMillis: Long) {
-        _metrics.update { it.copy(renderTimes = it.renderTimes + (screenName to timeMillis)) }
-    }
-
-    override fun trackNavigationTime(route: String, durationMs: Long) {
-        _metrics.update { it.copy(navigationTimes = it.navigationTimes + (route to durationMs)) }
     }
 
     override fun trackPhaseTime(phase: StartupPhase, durationMs: Double) {
         _metrics.update { 
-            when(phase) {
-                StartupPhase.DI_INIT -> it.copy(diInitializationTimeMs = durationMs)
-                StartupPhase.UI_INFLATION -> it.copy(uiInflationTimeMs = durationMs)
-                StartupPhase.OS_OVERHEAD -> it.copy(osOverheadTimeMs = durationMs)
-                StartupPhase.PROVIDER_INIT -> it.copy(providerInitTimeMs = durationMs)
-                StartupPhase.APP_ONCREATE -> it.copy(appOnCreateTimeMs = durationMs)
-                StartupPhase.ACTIVITY_LAUNCH -> it.copy(activityLaunchDelayMs = durationMs)
-                StartupPhase.SPLASH_SCREEN -> it.copy(splashScreenDurationMs = durationMs)
+            val updatedStartup = when(phase) {
+                StartupPhase.DI_INIT -> it.startup.copy(diInitializationTimeMs = durationMs)
+                StartupPhase.UI_INFLATION -> it.startup.copy(uiInflationTimeMs = durationMs)
+                StartupPhase.OS_OVERHEAD -> it.startup.copy(osOverheadTimeMs = durationMs)
+                StartupPhase.PROVIDER_INIT -> it.startup.copy(providerInitTimeMs = durationMs)
+                StartupPhase.APP_ONCREATE -> it.startup.copy(appOnCreateTimeMs = durationMs)
+                StartupPhase.ACTIVITY_LAUNCH -> it.startup.copy(activityLaunchDelayMs = durationMs)
+                StartupPhase.SPLASH_SCREEN -> it.startup.copy(splashScreenDurationMs = durationMs)
             }
+            it.copy(startup = updatedStartup)
         }
     }
 
-    override fun trackApiLatency(endpoint: String, durationMs: Long) {
-        _metrics.update { it.copy(apiLatencies = it.apiLatencies + (endpoint to durationMs)) }
+    // --- Delegação de UI (UITracker) ---
+
+    override fun trackRenderTime(screenName: String, timeMillis: Long) {
+        _metrics.update { 
+            it.copy(ui = it.ui.copy(renderTimes = it.ui.renderTimes + (screenName to timeMillis)))
+        }
+    }
+
+    override fun trackNavigationTime(route: String, durationMs: Long) {
+        _metrics.update { 
+            it.copy(ui = it.ui.copy(navigationTimes = it.ui.navigationTimes + (route to durationMs)))
+        }
     }
 
     override fun trackJank(screenName: String) {
         _metrics.update { 
-            val current = it.jankCounts[screenName] ?: 0
-            it.copy(jankCounts = it.jankCounts + (screenName to (current + 1)))
+            val current = it.ui.jankCounts[screenName] ?: 0
+            it.copy(ui = it.ui.copy(jankCounts = it.ui.jankCounts + (screenName to (current + 1))))
         }
     }
+
+    override fun trackRecomposition(composableName: String) {
+        _metrics.update { 
+            val current = it.ui.recompositionCounts[composableName] ?: 0
+            it.copy(ui = it.ui.copy(recompositionCounts = it.ui.recompositionCounts + (composableName to (current + 1))))
+        }
+    }
+
+    // --- Delegação de Sistema (MemoryTracker & BatteryTracker) ---
 
     override fun trackMemory(metrics: MemoryMetrics) {
         _metrics.update { 
@@ -107,9 +131,16 @@ class AppHealthTrackerImpl @Inject constructor(
 
     override fun trackBattery(metrics: BatteryMetrics) {
         _metrics.update { 
-            // Se for o primeiro registro de nível, salvamos como nível inicial
             val initialLevel = if (it.battery.initialLevel == -1) metrics.level else it.battery.initialLevel
             it.copy(battery = metrics.copy(initialLevel = initialLevel))
+        }
+    }
+
+    // --- Infraestrutura e Inicialização ---
+
+    override fun trackApiLatency(endpoint: String, durationMs: Long) {
+        _metrics.update { 
+            it.copy(ui = it.ui.copy(apiLatencies = it.ui.apiLatencies + (endpoint to durationMs)))
         }
     }
 
@@ -122,29 +153,48 @@ class AppHealthTrackerImpl @Inject constructor(
         if (provider != null) {
             loadModule(provider.get(), isParallel)
         } else {
-            Log.w("AppHealthTracker", "Initializer not found in Hilt map: ${clazz.simpleName}")
-            try {
-                val instance = clazz.getDeclaredConstructor().newInstance()
-                loadModule(instance, isParallel)
-            } catch (e: Exception) {
-                trackError("Falha ao instanciar modulo ${clazz.simpleName}: ${e.message}")
-            }
+            Log.e("AppHealthTracker", "ERRO CRÍTICO: Inicializador não configurado no Hilt: ${clazz.simpleName}")
+            trackError("Falha de DI: Modulo ${clazz.simpleName} não mapeado.")
         }
     }
 
     override fun loadModule(initializer: ModuleInitializer, isParallel: Boolean) {
-        val start = System.nanoTime()
-        initializer.initialize()
-        val durationMs = (System.nanoTime() - start) / 1_000_000.0
+        val moduleName = initializer.name
         
-        if (isParallel) {
-            _metrics.update { it.copy(parallelModuleLoadTimes = it.parallelModuleLoadTimes + (initializer.name to durationMs)) }
-        } else {
-            _metrics.update { it.copy(moduleLoadTimes = it.moduleLoadTimes + (initializer.name to durationMs)) }
+        if (initializedModules.contains(moduleName)) {
+            Log.d("AppHealthTracker", "Modulo $moduleName já inicializado. Ignorando.")
+            return
         }
-    }
 
-    override fun trackAppStartup() {
-        refreshStartupMetrics()
+        if (initializationStack.contains(moduleName)) {
+            val cycle = initializationStack.joinToString(" -> ") + " -> $moduleName"
+            Log.e("AppHealthTracker", "DEPENDÊNCIA CIRCULAR DETECTADA: $cycle")
+            trackError("Erro de Inicialização: Ciclo detectado em $moduleName")
+            return
+        }
+
+        initializationStack.add(moduleName)
+        
+        val start = TimeUtils.nowNanos()
+        try {
+            initializer.initialize()
+            val durationMs = TimeUtils.calculateDurationFrom(start)
+            
+            initializedModules.add(moduleName)
+            
+            _metrics.update { 
+                val updatedStartup = if (isParallel) {
+                    it.startup.copy(parallelModuleLoadTimes = it.startup.parallelModuleLoadTimes + (moduleName to durationMs))
+                } else {
+                    it.startup.copy(moduleLoadTimes = it.startup.moduleLoadTimes + (moduleName to durationMs))
+                }
+                it.copy(startup = updatedStartup)
+            }
+        } catch (e: Exception) {
+            Log.e("AppHealthTracker", "Falha ao inicializar modulo $moduleName", e)
+            trackError("Falha no modulo $moduleName: ${e.message}")
+        } finally {
+            initializationStack.remove(moduleName)
+        }
     }
 }

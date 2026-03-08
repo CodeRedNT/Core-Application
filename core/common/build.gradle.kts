@@ -5,6 +5,7 @@ plugins {
     alias(libs.plugins.google.devtools.ksp)
     alias(libs.plugins.hilt)
     id("maven-publish")
+    id("jacoco")
 }
 
 android {
@@ -29,6 +30,12 @@ android {
         compose = true
     }
     
+    buildTypes {
+        getByName("debug") {
+            enableUnitTestCoverage = true
+        }
+    }
+    
     publishing {
         singleVariant("release") {
             withSourcesJar()
@@ -51,6 +58,7 @@ dependencies {
     implementation(libs.androidx.metrics.performance)
     
     testImplementation(libs.junit)
+    testImplementation("io.mockk:mockk:1.13.12")
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
 }

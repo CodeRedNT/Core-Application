@@ -27,6 +27,18 @@ abstract class PerformanceModule {
 
     @Binds
     @Singleton
+    abstract fun bindMemoryTracker(impl: AppHealthTrackerImpl): MemoryTracker
+
+    @Binds
+    @Singleton
+    abstract fun bindBatteryTracker(impl: AppHealthTrackerImpl): BatteryTracker
+
+    @Binds
+    @Singleton
+    abstract fun bindUITracker(impl: AppHealthTrackerImpl): UITracker
+
+    @Binds
+    @Singleton
     abstract fun bindPerformanceMonitor(impl: PerformanceMonitorImpl): PerformanceMonitor
 
     @Binds

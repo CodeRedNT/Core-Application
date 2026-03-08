@@ -27,6 +27,12 @@ android {
     buildFeatures {
         compose = true
     }
+    
+    testOptions {
+        unitTests {
+            isIncludeAndroidResources = true
+        }
+    }
 }
 
 dependencies {
@@ -36,6 +42,7 @@ dependencies {
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.compose)
+    implementation(libs.androidx.lifecycle.process)
     implementation(libs.androidx.activity.compose)
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.compose.ui)
@@ -46,8 +53,24 @@ dependencies {
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.hilt.navigation.compose)
     
+    // Performance Metrics
+    implementation(libs.androidx.metrics.performance)
+    
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
 
     debugImplementation(libs.androidx.compose.ui.tooling)
+
+    // Test dependencies
+    testImplementation(libs.junit)
+    testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation("io.mockk:mockk:1.13.12")
+    testImplementation(libs.androidx.compose.ui.test.junit4)
+    
+    // Hilt Testing
+    testImplementation("com.google.dagger:hilt-android-testing:2.55")
+    kspTest("com.google.dagger:hilt-android-compiler:2.55")
+    
+    // Robolectric for Hilt Unit Tests
+    testImplementation("org.robolectric:robolectric:4.12.2")
 }

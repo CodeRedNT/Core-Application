@@ -5,11 +5,9 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.rounded.*
@@ -95,8 +93,8 @@ fun PerformanceDashboardScreen(
 
 @Composable
 fun StartupTabContent(uiState: HealthMetrics) {
-    val ttfdValue = uiState.renderTimes["MainActivity"] ?: uiState.renderTimes["MainScreen"] ?: 0L
-    val ttidRating = getTtidRating(uiState.startupTimeMs)
+    val ttfdValue = uiState.ui.renderTimes["MainActivity"] ?: uiState.ui.renderTimes["MainScreen"] ?: 0L
+    val ttidRating = getTtidRating(uiState.startup.totalStartupTimeMs)
     val ttfdRating = getTtfdRating(ttfdValue)
 
     LazyColumn(
@@ -107,7 +105,7 @@ fun StartupTabContent(uiState: HealthMetrics) {
         item {
             MetricCard(
                 title = "App Startup (TTID)",
-                value = formatDuration(uiState.startupTimeMs),
+                value = formatDuration(uiState.startup.totalStartupTimeMs),
                 icon = Icons.Rounded.Speed,
                 description = "Time to Initial Display - Rating: ${ttidRating.label}",
                 containerColor = ttidRating.color().copy(alpha = 0.2f),
@@ -125,36 +123,33 @@ fun StartupTabContent(uiState: HealthMetrics) {
             )
         }
         item {
-            val totalPhases = uiState.osOverheadTimeMs + uiState.providerInitTimeMs + 
-                            uiState.diInitializationTimeMs + uiState.appOnCreateTimeMs + 
-                            uiState.moduleLoadTimes.values.sum() + uiState.activityLaunchDelayMs + 
-                            uiState.uiInflationTimeMs + uiState.splashScreenDurationMs
+            val totalPhases = uiState.startup.totalStartupTimeMs
             
             ExpandableSection(title = "Startup Phases", totalTime = formatDuration(totalPhases)) {
-                PhaseItem("1. OS Overhead", uiState.osOverheadTimeMs, "Kernel fork to first provider")
-                PhaseItem("2. Provider Init", uiState.providerInitTimeMs, "ContentProviders setup")
-                PhaseItem("3. DI Optimization", uiState.diInitializationTimeMs, "Hilt Graph construction")
-                PhaseItem("4. Application Init", uiState.appOnCreateTimeMs, "Application onCreate cycle")
-                PhaseItem("5. Module Sync Costs", uiState.moduleLoadTimes.values.sum(), "Total of all sync modules")
-                PhaseItem("6. Activity Launch", uiState.activityLaunchDelayMs, "App to Activity handoff")
-                PhaseItem("7. UI Inflation", uiState.uiInflationTimeMs, "Compose setContent")
-                if (uiState.splashScreenDurationMs > 0) {
-                    PhaseItem("8. Splash Screen", uiState.splashScreenDurationMs, "Animation & Exit")
+                PhaseItem("1. OS Overhead", uiState.startup.osOverheadTimeMs, "Kernel fork to first provider")
+                PhaseItem("2. Provider Init", uiState.startup.providerInitTimeMs, "ContentProviders setup")
+                PhaseItem("3. DI Optimization", uiState.startup.diInitializationTimeMs, "Hilt Graph construction")
+                PhaseItem("4. Application Init", uiState.startup.appOnCreateTimeMs, "Application onCreate cycle")
+                PhaseItem("5. Module Sync Costs", uiState.startup.moduleLoadTimes.values.sum(), "Total of all sync modules")
+                PhaseItem("6. Activity Launch", uiState.startup.activityLaunchDelayMs, "App to Activity handoff")
+                PhaseItem("7. UI Inflation", uiState.startup.uiInflationTimeMs, "Compose setContent")
+                if (uiState.startup.splashScreenDurationMs > 0) {
+                    PhaseItem("8. Splash Screen", uiState.startup.splashScreenDurationMs, "Animation & Exit")
                 }
             }
         }
         
-        if (uiState.moduleLoadTimes.isNotEmpty()) {
+        if (uiState.startup.moduleLoadTimes.isNotEmpty()) {
             item {
-                val totalSync = uiState.moduleLoadTimes.values.sum()
+                val totalSync = uiState.startup.moduleLoadTimes.values.sum()
                 ExpandableSection(
                     title = "Module Costs (Sync)", 
                     totalTime = formatDuration(totalSync)
                 ) {
-                    uiState.moduleLoadTimes.forEach { (module, time) ->
+                    uiState.startup.moduleLoadTimes.forEach { entry ->
                         MetricCard(
-                            title = module, 
-                            value = formatDuration(time), 
+                            title = entry.key, 
+                            value = formatDuration(entry.value), 
                             icon = Icons.Rounded.Timer,
                             containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
                         )
@@ -163,17 +158,17 @@ fun StartupTabContent(uiState: HealthMetrics) {
             }
         }
 
-        if (uiState.parallelModuleLoadTimes.isNotEmpty()) {
+        if (uiState.startup.parallelModuleLoadTimes.isNotEmpty()) {
             item {
-                val totalAsync = uiState.parallelModuleLoadTimes.values.sum()
+                val totalAsync = uiState.startup.parallelModuleLoadTimes.values.sum()
                 ExpandableSection(
                     title = "Module Costs (Async)", 
                     totalTime = formatDuration(totalAsync)
                 ) {
-                    uiState.parallelModuleLoadTimes.forEach { (module, time) ->
+                    uiState.startup.parallelModuleLoadTimes.forEach { entry ->
                         MetricCard(
-                            title = module, 
-                            value = formatDuration(time), 
+                            title = entry.key, 
+                            value = formatDuration(entry.value), 
                             icon = Icons.Rounded.Bolt,
                             containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
                         )
@@ -227,10 +222,10 @@ fun MemoryTabContent(uiState: HealthMetrics) {
                     totalTime = "${uiState.memory.activityMemoryUsage.size} Screens",
                     totalLabel = "Tracked"
                 ) {
-                    uiState.memory.activityMemoryUsage.forEach { (activity, usage) ->
+                    uiState.memory.activityMemoryUsage.forEach { entry ->
                         MetricCard(
-                            title = activity,
-                            value = "${String.format(Locale.US, "%.1f", usage)} MB",
+                            title = entry.key,
+                            value = "${String.format(Locale.US, "%.1f", entry.value)} MB",
                             icon = Icons.Rounded.Analytics,
                             description = "Heap used at Resume",
                             containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.2f)
@@ -257,16 +252,17 @@ fun NetworkTabContent(uiState: HealthMetrics) {
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        if (uiState.apiLatencies.isEmpty()) {
+        if (uiState.ui.apiLatencies.isEmpty()) {
             item { Text("No API calls tracked yet.", modifier = Modifier.padding(16.dp)) }
         } else {
-            uiState.apiLatencies.forEach { (endpoint, time) ->
+            uiState.ui.apiLatencies.forEach { entry ->
                 item {
+                    val time = entry.value
                     MetricCard(
-                        title = endpoint,
+                        title = entry.key,
                         value = formatDuration(time.toDouble()),
                         icon = Icons.Rounded.CloudSync,
-                        containerColor = if (time > 1000) Color(0xFFFFC107).copy(alpha = 0.1f) else MaterialTheme.colorScheme.surfaceVariant
+                        containerColor = if (time > 1000L) Color(0xFFFFC107).copy(alpha = 0.1f) else MaterialTheme.colorScheme.surfaceVariant
                     )
                 }
             }

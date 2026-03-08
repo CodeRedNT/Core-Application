@@ -6,6 +6,7 @@ plugins {
     alias(libs.plugins.kotlin.compose) apply false
     alias(libs.plugins.google.devtools.ksp) apply false
     alias(libs.plugins.hilt) apply false
+    id("jacoco")
 }
 
 subprojects {
@@ -16,5 +17,40 @@ subprojects {
             substitute(module("br.com.coderednt:monitoring")).using(project(":monitoring"))
             substitute(module("br.com.coderednt:performance")).using(project(":performance"))
         }
+    }
+}
+
+tasks.register<JacocoReport>("jacocoFullReport") {
+    group = "Reporting"
+    description = "Gera relatório consolidado de cobertura de todos os módulos"
+
+    val subprojects = listOf("common", "monitoring", "performance", "ui", "app")
+    
+    val classDirectories = subprojects.map { project ->
+        fileTree("${project}/build/tmp/kotlin-classes/debug") {
+            include("**/*.class")
+            exclude("**/R.class", "**/R$*.class", "**/BuildConfig.*", "**/Manifest*.*", "**/*Test*.*", "**/di/**", "**/theme/**")
+        }
+    }
+    
+    val sourceDirectories = subprojects.map { project ->
+        "${project}/src/main/java"
+    }
+    
+    val executionData = subprojects.map { project ->
+        fileTree("${project}/build") {
+            include("outputs/unit_test_code_coverage/debugUnitTest/testDebugUnitTest.exec")
+            include("jacoco/testDebugUnitTest.exec")
+            include("jacoco/testDevDebugUnitTest.exec")
+        }
+    }
+
+    this.classDirectories.setFrom(files(classDirectories))
+    this.sourceDirectories.setFrom(files(sourceDirectories))
+    this.executionData.setFrom(files(executionData))
+
+    reports {
+        xml.required.set(true)
+        html.required.set(true)
     }
 }

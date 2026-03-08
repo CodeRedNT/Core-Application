@@ -2,11 +2,11 @@ package br.com.coderednt.coreapp.features.performance.internal
 
 import android.os.Build
 import android.os.Process
-import android.os.SystemClock
+import br.com.coderednt.coreapp.core.common.util.TimeUtils
 
 /**
  * Objeto interno ao módulo de performance para gerenciar os tempos de boot.
- * Totalmente isolado do core:common.
+ * Atualizado para usar TimeUtils e garantir consistência com SystemClock.elapsedRealtimeNanos().
  */
 internal object AppStartupTracker {
     var processStartTimeNanos: Long = 0
@@ -22,7 +22,7 @@ internal object AppStartupTracker {
 
     fun init() {
         if (providerStartTimeNanos == 0L) {
-            providerStartTimeNanos = SystemClock.elapsedRealtimeNanos()
+            providerStartTimeNanos = TimeUtils.nowNanos()
             
             val kernelStartMs = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                 Process.getStartElapsedRealtime()
@@ -38,13 +38,13 @@ internal object AppStartupTracker {
     
     fun markAppStart() {
         if (appStartTimeNanos == 0L) {
-            appStartTimeNanos = SystemClock.elapsedRealtimeNanos()
+            appStartTimeNanos = TimeUtils.nowNanos()
         }
     }
 
     fun markAppEnd() {
         if (appEndTimeNanos == 0L) {
-            appEndTimeNanos = SystemClock.elapsedRealtimeNanos()
+            appEndTimeNanos = TimeUtils.nowNanos()
         }
     }
 }

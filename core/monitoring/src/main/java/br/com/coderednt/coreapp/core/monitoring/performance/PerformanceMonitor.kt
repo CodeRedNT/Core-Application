@@ -8,8 +8,9 @@ import android.view.View
 interface PerformanceMonitor {
     /**
      * Inicia o rastreamento de tempo de uma Activity.
+     * @param startTimeNanos Tempo de início em nanossegundos (SystemClock.elapsedRealtimeNanos)
      */
-    fun onStartActivityTracking(startTimeMillis: Long)
+    fun onStartActivityTracking(startTimeNanos: Long)
 
     /**
      * Registra o tempo gasto na inflação da hierarquia de Views (Compose ou XML).
