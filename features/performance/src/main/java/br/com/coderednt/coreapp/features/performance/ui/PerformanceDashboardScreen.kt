@@ -99,7 +99,6 @@ fun PerformanceDashboardScreen(
                 )
             }
 
-            // --- TTFD: TIME TO FULLY DRAWN ---
             item {
                 MetricCard(
                     title = "Main Screen (TTFD)",
@@ -111,7 +110,6 @@ fun PerformanceDashboardScreen(
                 )
             }
 
-            // --- NAVEGAÇÃO ENTRE TELAS ---
             if (uiState.navigationTimes.isNotEmpty()) {
                 item {
                     val avgNav = uiState.navigationTimes.values.average()
@@ -210,9 +208,9 @@ fun VitalsLegendTable() {
         Column(modifier = Modifier.padding(16.dp)) {
             Text("Android Vitals Legend", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
             Spacer(modifier = Modifier.height(12.dp))
-            LegendRow("Good", Color(0xFF4CAF50), "TTID < 2s / TTFD < 3s")
-            LegendRow("Fair", Color(0xFFFFC107), "TTID < 5s / TTFD < 6s")
-            LegendRow("Poor", Color(0xFFF44336), "TTID > 5s / TTFD > 6s")
+            LegendRow(PerformanceRating.GOOD.label, color = PerformanceRating.GOOD.color.invoke(), "TTID < 2s / TTFD < 3s")
+            LegendRow(PerformanceRating.FAIR.label, PerformanceRating.FAIR.color.invoke(), "TTID < 5s / TTFD < 6s")
+            LegendRow(PerformanceRating.POOR.label, PerformanceRating.POOR.color.invoke(), "TTID > 5s / TTFD > 6s")
         }
     }
 }

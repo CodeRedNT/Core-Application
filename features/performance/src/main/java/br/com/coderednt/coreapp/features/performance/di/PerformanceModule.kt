@@ -18,7 +18,4 @@ abstract class PerformanceModule {
         impl: PerformanceMonitorImpl
     ): PerformanceMonitor
 
-    // O registro do PerformanceModuleInitializer foi removido!
-    // Agora o framework o encontra automaticamente via reflexão 
-    // ou o desenvolvedor pode optar por não usar DI para inicializadores simples.
 }

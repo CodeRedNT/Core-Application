@@ -2,7 +2,6 @@ package br.com.coderednt.coreapp.core.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-// Vibrant Energetic Color Scheme
 val PrimaryLight = Color(0xFF0061A4)
 val OnPrimaryLight = Color(0xFFFFFFFF)
 val PrimaryContainerLight = Color(0xFFD1E4FF)

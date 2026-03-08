@@ -1,4 +1,4 @@
-package br.com.coderednt.coreapp
+package br.com.coderednt.coreapp.ui
 
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
@@ -6,8 +6,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Speed
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Icon
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
@@ -18,21 +24,21 @@ import androidx.navigation.compose.rememberNavController
 import br.com.coderednt.coreapp.core.ui.theme.CoreAppTheme
 import br.com.coderednt.coreapp.features.performance.navigation.NavigationObserver
 import br.com.coderednt.coreapp.features.performance.navigation.PERFORMANCE_ROUTE
-import br.com.coderednt.coreapp.navigation.CoreNavHost
+import br.com.coderednt.coreapp.navigation.NavigationHost
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 
 /**
  * Orquestrador principal da UI do aplicativo.
- * Responsável apenas pela estrutura de Scaffold e Navegação de alto nível.
+ * Responsável apenas pela estrutura de Scaffold e Navegação.
  */
 @Composable
-fun CoreApp() {
+fun MainScreen() {
     CoreAppTheme {
         val navController = rememberNavController()
         val navBackStackEntry by navController.currentBackStackEntryAsState()
         val currentDestination = navBackStackEntry?.destination
-        
+
         // Injeta o observador de performance para navegação
         val navigationViewModel: PerformanceNavigationViewModel = hiltViewModel()
         val navigationObserver = navigationViewModel.observer
@@ -80,7 +86,7 @@ fun CoreApp() {
                 }
             }
         ) { innerPadding ->
-            CoreNavHost(
+            NavigationHost(
                 navController = navController,
                 modifier = Modifier.padding(innerPadding)
             )

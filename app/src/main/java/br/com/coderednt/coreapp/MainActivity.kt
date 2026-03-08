@@ -4,11 +4,11 @@ import android.os.Bundle
 import androidx.compose.runtime.Composable
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import br.com.coderednt.coreapp.core.common.base.BaseActivity
+import br.com.coderednt.coreapp.ui.MainScreen
 import dagger.hilt.android.AndroidEntryPoint
 
 /**
  * Ponto de entrada principal do aplicativo.
- * Minimalista, seguindo princípios de modularização profissional.
  */
 @AndroidEntryPoint
 class MainActivity : BaseActivity() {
@@ -25,7 +25,6 @@ class MainActivity : BaseActivity() {
 
     @Composable
     override fun ScreenContent() {
-        // Inicia a orquestração de navegação
-        CoreApp()
+        MainScreen()
     }
 }

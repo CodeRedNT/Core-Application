@@ -9,11 +9,10 @@ import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import br.com.coderednt.coreapp.features.performance.navigation.PERFORMANCE_ROUTE
 import br.com.coderednt.coreapp.features.performance.navigation.performanceScreen
 
 @Composable
-fun CoreNavHost(
+fun NavigationHost(
     navController: NavHostController,
     modifier: Modifier = Modifier,
     startDestination: String = "games_route"
