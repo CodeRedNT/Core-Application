@@ -1,50 +1,52 @@
 package br.com.coderednt.coreapp.core.common.base
 
 import android.app.Application
+import android.os.SystemClock
 import br.com.coderednt.coreapp.core.monitoring.performance.*
 import javax.inject.Inject
 import kotlin.system.exitProcess
 
+/**
+ * BaseApplication abstrai a lógica de inicialização, tratamento de erros global
+ * e rastreamento de saúde do aplicativo.
+ */
 abstract class BaseApplication : Application() {
 
     @Inject
     lateinit var appHealthTracker: AppHealthTracker
 
     override fun onCreate() {
+        // 1. Marca o início real do método
+        val startOnCreate = System.nanoTime()
+        
+        // 2. super.onCreate() é onde o Hilt realiza a injeção de membros.
+        // Em Release, o R8 otimiza isso drasticamente, mas ainda há um custo.
+        super.onCreate()
+        
+        // 3. Agora que o appHealthTracker foi injetado, calculamos o tempo gasto no super
+        val diDurationMs = (System.nanoTime() - startOnCreate) / 1_000_000.0
+        
         setupErrorHandling()
         
-        // Marca o início absoluto do Application.onCreate via interface desacoplada
+        // 4. Reportamos a fase de DI (Hilt Init)
         appHealthTracker.onAppStart()
-
-        // Medimos o custo do super.onCreate (Hilt Overhead / DI Init)
-        val diStart = System.nanoTime()
-        super.onCreate()
-        val diDuration = (System.nanoTime() - diStart) / 1_000_000.0
-
-        // Registra explicitamente o tempo do DI para compor as fases
-        appHealthTracker.trackPhaseTime(StartupPhase.DI_INIT, diDuration)
-
-        // Inicialização de módulos via DSL
+        appHealthTracker.trackPhaseTime(StartupPhase.DI_INIT, diDurationMs)
+        
         onCreateModules()
 
-        // Marca o fim absoluto do Application.onCreate via interface desacoplada
         appHealthTracker.onAppEnd()
     }
 
     private fun setupErrorHandling() {
         val defaultHandler = Thread.getDefaultUncaughtExceptionHandler()
         Thread.setDefaultUncaughtExceptionHandler { thread, throwable ->
-            val errorMessage = "Crash in ${thread.name}: ${throwable.localizedMessage ?: "Unknown Error"}"
-            appHealthTracker.trackError(errorMessage)
-            
-            // Permite que o sistema trate o crash após o log
+            if (::appHealthTracker.isInitialized) {
+                val errorMessage = "Crash in ${thread.name}: ${throwable.localizedMessage ?: "Unknown Error"}"
+                appHealthTracker.trackError(errorMessage)
+            }
             defaultHandler?.uncaughtException(thread, throwable) ?: exitProcess(1)
         }
     }
 
-    /**
-     * Define os módulos a serem carregados durante o startup.
-     * Deve ser implementado pela classe Application final.
-     */
     abstract fun onCreateModules()
 }

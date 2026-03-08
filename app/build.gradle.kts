@@ -7,11 +7,11 @@ plugins {
 }
 
 android {
-    namespace = "br.com.coderednt.coreapp"
+    namespace = "br.com.coderednt"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "br.com.coderednt.coreapp"
+        applicationId = "br.com.coderednt"
         minSdk = 24
         targetSdk = 35
         versionCode = 1
@@ -20,6 +20,7 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    // Definimos a dimensão para separar ambientes de execução
     flavorDimensions += "environment"
     productFlavors {
         create("dev") {
@@ -27,32 +28,46 @@ android {
             applicationIdSuffix = ".dev"
             versionNameSuffix = "-dev"
             
-            // Limit "dev" flavor to pt-BR and xxhdpi for faster builds
-//            resourceConfigurations += listOf("pt-BR", "xxhdpi")
+            // Exemplo de campo customizado para identificar o ambiente no código
+            buildConfigField("String", "ENV", "\"DEV\"")
+            buildConfigField("String", "BASE_URL", "\"https://api-dev.coderednt.com/\"")
         }
         create("staging") {
             dimension = "environment"
             applicationIdSuffix = ".staging"
             versionNameSuffix = "-staging"
+            
+            buildConfigField("String", "ENV", "\"STAGING\"")
+            buildConfigField("String", "BASE_URL", "\"https://api-staging.coderednt.com/\"")
         }
         create("prod") {
             dimension = "environment"
+            // Sem sufixo para o ID de produção oficial
+            
+            buildConfigField("String", "ENV", "\"PROD\"")
+            buildConfigField("String", "BASE_URL", "\"https://api.coderednt.com/\"")
         }
     }
 
     buildTypes {
-        release {
+        getByName("release") {
             isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            // Disables PNG crunching for the "release" build type.
-            isCrunchPngs = false
+            signingConfig = signingConfigs.getByName("debug") // Ajustar para signing oficial no futuro
         }
-        debug {
-            applicationIdSuffix = ".debug"
+        
+        getByName("debug") {
+            // Removemos o sufixo .debug aqui para evitar br.com.coderednt.dev.debug
+            // O sufixo do flavor (ex: .dev) já é suficiente para coexistência.
+            applicationIdSuffix = "" 
+            isDebuggable = true
         }
+
+        // Criamos um build type de benchmark ou profile se necessário futuramente
     }
     
     compileOptions {
@@ -71,9 +86,9 @@ android {
 }
 
 dependencies {
-    implementation(project(":common"))
-    implementation(project(":ui"))
-    implementation(project(":performance"))
+    implementation(libs.core.common)
+    implementation(libs.core.ui)
+    implementation(libs.core.performance)
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
@@ -89,7 +104,6 @@ dependencies {
     implementation(libs.androidx.compose.material.icons.extended)
     implementation(libs.androidx.core.splashscreen)
     
-    // O plugin do Hilt exige que a dependência seja declarada no módulo onde o plugin é aplicado
     implementation(libs.hilt.android)
     implementation(libs.androidx.hilt.navigation.compose)
     ksp(libs.hilt.compiler)

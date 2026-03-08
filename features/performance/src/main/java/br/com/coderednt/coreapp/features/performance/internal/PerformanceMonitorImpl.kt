@@ -44,4 +44,14 @@ class PerformanceMonitorImpl @Inject constructor(
     override fun onJankDetected(activityName: String, durationMs: Long) {
         appHealthTracker.trackError("Jank detected in $activityName: ${durationMs}ms")
     }
+
+    override fun onTrackPhase(phase: StartupPhase, durationMs: Double) {
+        appHealthTracker.trackPhaseTime(phase, durationMs)
+    }
+
+    override fun onTrackMemory(activityName: String) {
+        val runtime = Runtime.getRuntime()
+        val usedMb = (runtime.totalMemory() - runtime.freeMemory()) / (1024.0 * 1024.0)
+        appHealthTracker.trackActivityMemory(activityName, usedMb)
+    }
 }

@@ -90,6 +90,12 @@ androidx-hilt-navigation-compose = { group = "androidx.hilt", name = "hilt-navig
 androidx-core-splashscreen = { group = "androidx.core", name = "core-splashscreen", version.ref = "coreSplashScreen" }
 androidx-metrics-performance = { group = "androidx.metrics", name = "metrics-performance", version.ref = "metricsPerformance" }
 
+# Módulos Internos (Core Application)
+core-common = { group = "br.com.coderednt", name = "common", version = "1.0.0" }
+core-ui = { group = "br.com.coderednt", name = "ui", version = "1.0.0" }
+core-monitoring = { group = "br.com.coderednt", name = "monitoring", version = "1.0.0" }
+core-performance = { group = "br.com.coderednt", name = "performance", version = "1.0.0" }
+
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 android-library = { id = "com.android.library", version.ref = "agp" }

@@ -7,3 +7,14 @@ plugins {
     alias(libs.plugins.google.devtools.ksp) apply false
     alias(libs.plugins.hilt) apply false
 }
+
+subprojects {
+    configurations.all {
+        resolutionStrategy.dependencySubstitution {
+            substitute(module("br.com.coderednt:common")).using(project(":common"))
+            substitute(module("br.com.coderednt:ui")).using(project(":ui"))
+            substitute(module("br.com.coderednt:monitoring")).using(project(":monitoring"))
+            substitute(module("br.com.coderednt:performance")).using(project(":performance"))
+        }
+    }
+}

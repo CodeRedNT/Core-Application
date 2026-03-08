@@ -25,6 +25,10 @@ class AppHealthTrackerImpl @Inject constructor(
 
     override fun onAppEnd() {
         AppStartupTracker.markAppEnd()
+        // Captura a memória logo após o fim do onCreate da Application
+        val runtime = Runtime.getRuntime()
+        val initialUsed = (runtime.totalMemory() - runtime.freeMemory()) / (1024.0 * 1024.0)
+        _metrics.update { it.copy(memory = it.memory.copy(initialMemoryMb = initialUsed)) }
     }
 
     private fun refreshStartupMetrics() {
@@ -42,15 +46,11 @@ class AppHealthTrackerImpl @Inject constructor(
     }
     
     override fun trackRenderTime(screenName: String, timeMillis: Long) {
-        _metrics.update { 
-            it.copy(renderTimes = it.renderTimes + (screenName to timeMillis))
-        }
+        _metrics.update { it.copy(renderTimes = it.renderTimes + (screenName to timeMillis)) }
     }
 
     override fun trackNavigationTime(route: String, durationMs: Long) {
-        _metrics.update { 
-            it.copy(navigationTimes = it.navigationTimes + (route to durationMs))
-        }
+        _metrics.update { it.copy(navigationTimes = it.navigationTimes + (route to durationMs)) }
     }
 
     override fun trackPhaseTime(phase: StartupPhase, durationMs: Double) {
@@ -67,6 +67,44 @@ class AppHealthTrackerImpl @Inject constructor(
         }
     }
 
+    override fun trackApiLatency(endpoint: String, durationMs: Long) {
+        _metrics.update { it.copy(apiLatencies = it.apiLatencies + (endpoint to durationMs)) }
+    }
+
+    override fun trackJank(screenName: String) {
+        _metrics.update { 
+            val current = it.jankCounts[screenName] ?: 0
+            it.copy(jankCounts = it.jankCounts + (screenName to (current + 1)))
+        }
+    }
+
+    override fun trackMemory(metrics: MemoryMetrics) {
+        _metrics.update { 
+            it.copy(memory = metrics.copy(
+                initialMemoryMb = it.memory.initialMemoryMb,
+                activityMemoryUsage = it.memory.activityMemoryUsage,
+                gcCount = it.memory.gcCount
+            ))
+        }
+    }
+
+    override fun trackActivityMemory(activityName: String, usedMb: Double) {
+        _metrics.update { 
+            val updatedActivityMap = it.memory.activityMemoryUsage + (activityName to usedMb)
+            it.copy(memory = it.memory.copy(activityMemoryUsage = updatedActivityMap))
+        }
+    }
+
+    override fun notifyGC() {
+        _metrics.update { 
+            it.copy(memory = it.memory.copy(gcCount = it.memory.gcCount + 1))
+        }
+    }
+
+    override fun trackBattery(metrics: BatteryMetrics) {
+        _metrics.update { it.copy(battery = metrics) }
+    }
+
     override fun trackError(message: String) {
         _metrics.update { it.copy(lastError = message) }
     }
@@ -75,13 +113,6 @@ class AppHealthTrackerImpl @Inject constructor(
         val provider = initializers[clazz]
         if (provider != null) {
             loadModule(provider.get(), isParallel)
-        } else {
-            try {
-                val instance = clazz.getDeclaredConstructor().newInstance()
-                loadModule(instance, isParallel)
-            } catch (e: Exception) {
-                trackError("Falha ao instanciar modulo ${clazz.simpleName}: ${e.message}")
-            }
         }
     }
 
@@ -91,13 +122,9 @@ class AppHealthTrackerImpl @Inject constructor(
         val durationMs = (System.nanoTime() - start) / 1_000_000.0
         
         if (isParallel) {
-            _metrics.update { 
-                it.copy(parallelModuleLoadTimes = it.parallelModuleLoadTimes + (initializer.name to durationMs))
-            }
+            _metrics.update { it.copy(parallelModuleLoadTimes = it.parallelModuleLoadTimes + (initializer.name to durationMs)) }
         } else {
-            _metrics.update { 
-                it.copy(moduleLoadTimes = it.moduleLoadTimes + (initializer.name to durationMs))
-            }
+            _metrics.update { it.copy(moduleLoadTimes = it.moduleLoadTimes + (initializer.name to durationMs)) }
         }
     }
 

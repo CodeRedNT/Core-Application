@@ -19,7 +19,6 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
-        gradlePluginPortal()
     }
 }
 
@@ -30,7 +29,7 @@ include(":monitoring")
 include(":ui")
 include(":performance")
 
-// Mapeamento manual dos diretórios para remover a hierarquia lógica do Gradle
+// Mapeamento manual dos diretórios
 project(":common").projectDir = file("core/common")
 project(":monitoring").projectDir = file("core/monitoring")
 project(":ui").projectDir = file("core/ui")
