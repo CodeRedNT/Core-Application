@@ -1,8 +1,8 @@
 package br.com.coderednt.coreapp.features.performance.ui
 
 import androidx.lifecycle.ViewModel
-import br.com.coderednt.coreapp.core.common.performance.AppHealthTracker
-import br.com.coderednt.coreapp.core.common.performance.HealthMetrics
+import br.com.coderednt.coreapp.core.monitoring.performance.AppHealthTracker
+import br.com.coderednt.coreapp.core.monitoring.performance.HealthMetrics
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.StateFlow
 import javax.inject.Inject
@@ -16,6 +16,5 @@ class PerformanceViewModel @Inject constructor(
 
     init {
         // O carregamento do módulo Performance já deve ter sido feito na Application.
-        // Removi a chamada ao método load() que foi removido da interface AppHealthTracker.
     }
 }

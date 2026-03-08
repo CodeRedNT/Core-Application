@@ -1,4 +1,4 @@
-package br.com.coderednt.coreapp.core.common.performance
+package br.com.coderednt.coreapp.core.monitoring.performance
 
 import kotlinx.coroutines.flow.StateFlow
 
@@ -24,6 +24,10 @@ data class HealthMetrics(
 
 interface AppHealthTracker {
     val metrics: StateFlow<HealthMetrics>
+    
+    fun onAppStart()
+    fun onAppEnd()
+
     fun trackRenderTime(screenName: String, timeMillis: Long)
     fun trackNavigationTime(route: String, durationMs: Long)
     fun trackPhaseTime(phase: StartupPhase, durationMs: Double)

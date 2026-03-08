@@ -37,13 +37,14 @@ android {
 }
 
 dependencies {
+    api(project(":monitoring"))
+
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.runtime)
 
-    // Usando 'api' para que módulos que dependem do common (como o :app) herdem o Hilt
     api(libs.hilt.android)
     ksp(libs.hilt.compiler)
     

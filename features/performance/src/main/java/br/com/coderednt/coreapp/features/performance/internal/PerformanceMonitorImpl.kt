@@ -2,10 +2,9 @@ package br.com.coderednt.coreapp.features.performance.internal
 
 import android.os.SystemClock
 import android.view.View
-import br.com.coderednt.coreapp.core.common.performance.AppHealthTracker
-import br.com.coderednt.coreapp.core.common.performance.AppStartupTracker
-import br.com.coderednt.coreapp.core.common.performance.PerformanceMonitor
-import br.com.coderednt.coreapp.core.common.performance.StartupPhase
+import br.com.coderednt.coreapp.core.monitoring.performance.AppHealthTracker
+import br.com.coderednt.coreapp.core.monitoring.performance.PerformanceMonitor
+import br.com.coderednt.coreapp.core.monitoring.performance.StartupPhase
 import javax.inject.Inject
 import javax.inject.Singleton
 

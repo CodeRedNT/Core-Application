@@ -1,4 +1,4 @@
-package br.com.coderednt.coreapp.core.common.analytics
+package br.com.coderednt.coreapp.core.monitoring.analytics
 
 interface AnalyticsTracker {
     fun logEvent(name: String, params: Map<String, Any> = emptyMap())

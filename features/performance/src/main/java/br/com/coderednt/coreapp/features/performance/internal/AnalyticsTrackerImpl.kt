@@ -1,6 +1,7 @@
-package br.com.coderednt.coreapp.core.common.analytics
+package br.com.coderednt.coreapp.features.performance.internal
 
 import android.util.Log
+import br.com.coderednt.coreapp.core.monitoring.analytics.AnalyticsTracker
 import javax.inject.Inject
 import javax.inject.Singleton
 

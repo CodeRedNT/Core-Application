@@ -7,13 +7,11 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.Composable
 import androidx.metrics.performance.JankStats
-import br.com.coderednt.coreapp.core.common.performance.PerformanceMonitor
+import br.com.coderednt.coreapp.core.monitoring.performance.PerformanceMonitor
 import javax.inject.Inject
 
 /**
  * BaseActivity profissional e desacoplada.
- * Proverá suporte básico para todas as telas do ecossistema, permitindo
- * monitoramento de performance de forma opcional via [PerformanceMonitor].
  */
 abstract class BaseActivity : ComponentActivity() {
 
@@ -22,14 +20,8 @@ abstract class BaseActivity : ComponentActivity() {
 
     private var jankStats: JankStats? = null
 
-    /**
-     * Nome identificador para as métricas de renderização. 
-     */
     open val activityName: String get() = this::class.java.simpleName
 
-    /**
-     * Conteúdo Compose da tela.
-     */
     @Composable
     abstract fun ScreenContent()
 
@@ -39,7 +31,6 @@ abstract class BaseActivity : ComponentActivity() {
         
         enableEdgeToEdge()
         
-        // Inicializa JankStats
         jankStats = JankStats.createAndTrack(window) { frameData ->
             if (frameData.isJank) {
                 performanceMonitor.onJankDetected(
@@ -49,7 +40,6 @@ abstract class BaseActivity : ComponentActivity() {
             }
         }
         
-        // Sinaliza início via interface
         performanceMonitor.onStartActivityTracking(startTime)
         
         val startNano = System.nanoTime()

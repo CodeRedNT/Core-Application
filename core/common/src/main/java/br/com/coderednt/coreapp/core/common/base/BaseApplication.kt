@@ -1,7 +1,7 @@
 package br.com.coderednt.coreapp.core.common.base
 
 import android.app.Application
-import br.com.coderednt.coreapp.core.common.performance.*
+import br.com.coderednt.coreapp.core.monitoring.performance.*
 import javax.inject.Inject
 import kotlin.system.exitProcess
 
@@ -13,8 +13,8 @@ abstract class BaseApplication : Application() {
     override fun onCreate() {
         setupErrorHandling()
         
-        // Marca o início absoluto do Application.onCreate
-        AppStartupTracker.markAppStart()
+        // Marca o início absoluto do Application.onCreate via interface desacoplada
+        appHealthTracker.onAppStart()
 
         // Medimos o custo do super.onCreate (Hilt Overhead / DI Init)
         val diStart = System.nanoTime()
@@ -24,12 +24,11 @@ abstract class BaseApplication : Application() {
         // Registra explicitamente o tempo do DI para compor as fases
         appHealthTracker.trackPhaseTime(StartupPhase.DI_INIT, diDuration)
 
-        // --- MANIFESTO DSL (Sincronizado com o Boot do Manifest) ---
-        // Removido startManifest pois a interface AppHealthTracker foi simplificada
+        // Inicialização de módulos via DSL
         onCreateModules()
 
-        // Marca o fim absoluto do Application.onCreate
-        AppStartupTracker.markAppEnd()
+        // Marca o fim absoluto do Application.onCreate via interface desacoplada
+        appHealthTracker.onAppEnd()
     }
 
     private fun setupErrorHandling() {
@@ -38,7 +37,7 @@ abstract class BaseApplication : Application() {
             val errorMessage = "Crash in ${thread.name}: ${throwable.localizedMessage ?: "Unknown Error"}"
             appHealthTracker.trackError(errorMessage)
             
-            // Permite que o sistema trate o crash após o log (evita que o app fique em estado zumbi)
+            // Permite que o sistema trate o crash após o log
             defaultHandler?.uncaughtException(thread, throwable) ?: exitProcess(1)
         }
     }

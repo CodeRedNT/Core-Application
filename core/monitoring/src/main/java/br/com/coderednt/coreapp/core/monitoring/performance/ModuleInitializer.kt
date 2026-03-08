@@ -1,4 +1,4 @@
-package br.com.coderednt.coreapp.core.common.performance
+package br.com.coderednt.coreapp.core.monitoring.performance
 
 interface ModuleInitializer {
     val name: String

@@ -25,6 +25,13 @@ dependencyResolutionManagement {
 
 rootProject.name = "Core App"
 include(":app")
-include(":core:common")
-include(":core:ui")
-include(":features:performance")
+include(":common")
+include(":monitoring")
+include(":ui")
+include(":performance")
+
+// Mapeamento manual dos diretórios para remover a hierarquia lógica do Gradle
+project(":common").projectDir = file("core/common")
+project(":monitoring").projectDir = file("core/monitoring")
+project(":ui").projectDir = file("core/ui")
+project(":performance").projectDir = file("features/performance")

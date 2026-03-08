@@ -30,8 +30,9 @@ android {
 }
 
 dependencies {
-    implementation(project(":core:common"))
-    implementation(project(":core:ui"))
+    implementation(project(":common"))
+    implementation(project(":ui"))
+    implementation(project(":monitoring"))
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.compose)

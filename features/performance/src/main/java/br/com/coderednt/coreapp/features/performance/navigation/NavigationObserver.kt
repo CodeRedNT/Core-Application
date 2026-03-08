@@ -1,21 +1,17 @@
 package br.com.coderednt.coreapp.features.performance.navigation
 
 import androidx.navigation.NavController
-import br.com.coderednt.coreapp.core.common.performance.AppHealthTracker
+import br.com.coderednt.coreapp.core.monitoring.performance.AppHealthTracker
 import javax.inject.Inject
 
 /**
  * Observador de navegação para métricas de performance.
- * Desacopla o rastreamento da UI principal do App.
  */
 class NavigationObserver @Inject constructor(
     private val appHealthTracker: AppHealthTracker
 ) {
     private var lastNavigationStartTime: Long = 0L
 
-    /**
-     * Inicia o monitoramento de um NavController.
-     */
     fun install(navController: NavController) {
         navController.addOnDestinationChangedListener { _, destination, _ ->
             if (lastNavigationStartTime > 0) {
@@ -27,9 +23,6 @@ class NavigationObserver @Inject constructor(
         }
     }
 
-    /**
-     * Deve ser chamado antes de disparar uma navegação para marcar o início.
-     */
     fun markStart() {
         lastNavigationStartTime = System.currentTimeMillis()
     }
