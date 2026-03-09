@@ -16,6 +16,8 @@ Este guia centraliza a documentação técnica do Core-Application. Para facilit
     *   Detekt, Robolectric e Roborazzi (Snapshot Testing).
 6.  [**Convenções de Documentação**](docs/architecture/06-documentation.md)
     *   Padrões de KDoc e Clean Code.
+7.  [**Logging e Telemetria**](docs/architecture/07-logging.md)
+    *   Logging estruturado, Timber e rastreamento de erros silenciosos.
 
 ---
 *Última atualização: Fevereiro de 2025*

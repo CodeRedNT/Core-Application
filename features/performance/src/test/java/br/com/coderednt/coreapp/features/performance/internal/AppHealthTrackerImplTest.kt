@@ -1,7 +1,7 @@
 package br.com.coderednt.coreapp.features.performance.internal
 
 import android.os.SystemClock
-import android.util.Log
+import br.com.coderednt.coreapp.core.logging.Logger
 import br.com.coderednt.coreapp.core.monitoring.analytics.AnalyticsTracker
 import br.com.coderednt.coreapp.core.monitoring.performance.*
 import io.mockk.*
@@ -18,22 +18,15 @@ class AppHealthTrackerImplTest {
 
     private lateinit var tracker: AppHealthTrackerImpl
     private val analyticsTracker: AnalyticsTracker = mockk(relaxed = true)
+    private val logger: Logger = mockk(relaxed = true)
     private val mockInitializer: ModuleInitializer = mockk(relaxed = true)
     private val mockProvider: Provider<ModuleInitializer> = mockk()
 
     @Before
     fun setup() {
         mockkStatic(SystemClock::class)
-        mockkStatic(Log::class)
-        
-        // Mock completo de Log para silenciar avisos durante testes
-        every { Log.d(any(), any()) } returns 0
-        every { Log.e(any(), any()) } returns 0
-        every { Log.e(any(), any(), any()) } returns 0
-        every { Log.w(any(), any() as String) } returns 0
-        every { Log.i(any(), any()) } returns 0
-        
         every { SystemClock.elapsedRealtimeNanos() } returns 1000L
+        
         every { mockProvider.get() } returns mockInitializer
         every { mockInitializer.name } returns "test_module"
         
@@ -41,13 +34,12 @@ class AppHealthTrackerImplTest {
             mockInitializer::class.java to mockProvider
         )
 
-        tracker = AppHealthTrackerImpl(analyticsTracker, initializers)
+        tracker = AppHealthTrackerImpl(analyticsTracker, initializers, logger)
     }
 
     @After
     fun tearDown() {
         unmockkStatic(SystemClock::class)
-        unmockkStatic(Log::class)
     }
 
     @Test

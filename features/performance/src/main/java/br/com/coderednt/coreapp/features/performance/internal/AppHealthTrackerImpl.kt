@@ -1,7 +1,7 @@
 package br.com.coderednt.coreapp.features.performance.internal
 
-import android.util.Log
 import br.com.coderednt.coreapp.core.common.util.TimeUtils
+import br.com.coderednt.coreapp.core.logging.Logger
 import br.com.coderednt.coreapp.core.monitoring.analytics.AnalyticsTracker
 import br.com.coderednt.coreapp.core.monitoring.performance.*
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -16,42 +16,27 @@ import javax.inject.Singleton
 /**
  * Implementação orquestradora do [AppHealthTracker] com suporte a Safe Initializers.
  * 
- * Esta classe centraliza o estado de todas as métricas de saúde do aplicativo 
- * (Startup, UI, Memória, Bateria) e gerencia o ciclo de vida de inicialização 
- * dos módulos, prevenindo dependências circulares e re-inicializações.
- * 
- * @property analyticsTracker Rastreador para reportar eventos críticos e erros.
- * @property initializers Mapa de provedores de inicialização injetados via Hilt Multibinding.
+ * Esta classe utiliza o módulo de logging estruturado para telemetria, garantindo 
+ * que erros internos do SDK sejam registrados sem causar recursão infinita.
  */
 @Singleton
 class AppHealthTrackerImpl @Inject constructor(
     private val analyticsTracker: AnalyticsTracker,
-    private val initializers: Map<Class<out ModuleInitializer>, @JvmSuppressWildcards Provider<ModuleInitializer>>
+    private val initializers: Map<Class<out ModuleInitializer>, @JvmSuppressWildcards Provider<ModuleInitializer>>,
+    private val logger: Logger
 ) : AppHealthTracker {
 
     private val _metrics = MutableStateFlow(HealthMetrics())
-    
-    /**
-     * Fluxo de estado contínuo das métricas, acessível por ViewModels para renderização na UI.
-     */
     override val metrics: StateFlow<HealthMetrics> = _metrics.asStateFlow()
 
-    // Controle de Safe Initializers
     private val initializedModules = Collections.synchronizedSet(mutableSetOf<String>())
     private val initializationStack = Collections.synchronizedList(mutableListOf<String>())
 
-    // --- Métricas de Ciclo de Vida do App ---
-
-    /**
-     * Marca o início do ciclo de vida da Application.
-     */
     override fun onAppStart() {
         AppStartupTracker.markAppStart()
+        logger.i("Aplicação iniciada. Iniciando rastreamento de saúde...")
     }
 
-    /**
-     * Marca o fim da fase de inicialização da Application e captura a memória base inicial.
-     */
     override fun onAppEnd() {
         AppStartupTracker.markAppEnd()
         val runtime = Runtime.getRuntime()
@@ -60,11 +45,9 @@ class AppHealthTrackerImpl @Inject constructor(
         _metrics.update { 
             it.copy(memory = it.memory.copy(initialMemoryMb = initialUsed))
         }
+        logger.i("Fim do onCreate da Application. Memória inicial: %.2f MB", initialUsed)
     }
 
-    /**
-     * Consolida as métricas de startup (OS Overhead, Provider Init, App Init).
-     */
     override fun trackAppStartup() {
         val osOverhead = TimeUtils.nanosToMillis(AppStartupTracker.providerStartTimeNanos - AppStartupTracker.processStartTimeNanos)
         val providerInit = TimeUtils.nanosToMillis(AppStartupTracker.appStartTimeNanos - AppStartupTracker.providerStartTimeNanos)
@@ -78,11 +61,9 @@ class AppHealthTrackerImpl @Inject constructor(
             )
             it.copy(startup = updatedStartup)
         }
+        logger.d("Startup consolidado: OS Overhead=%.2fms, Providers=%.2fms, App=%.2fms", osOverhead, providerInit, appInit)
     }
 
-    /**
-     * Registra o tempo de duração de uma fase específica do startup.
-     */
     override fun trackPhaseTime(phase: StartupPhase, durationMs: Double) {
         _metrics.update { 
             val updatedStartup = when(phase) {
@@ -98,12 +79,11 @@ class AppHealthTrackerImpl @Inject constructor(
         }
     }
 
-    // --- Delegação de UI (UITracker) ---
-
     override fun trackRenderTime(screenName: String, timeMillis: Long) {
         _metrics.update { 
             it.copy(ui = it.ui.copy(renderTimes = it.ui.renderTimes + (screenName to timeMillis)))
         }
+        logger.d("Renderização da tela [%s]: %d ms", screenName, timeMillis)
     }
 
     override fun trackNavigationTime(route: String, durationMs: Long) {
@@ -117,6 +97,7 @@ class AppHealthTrackerImpl @Inject constructor(
             val current = it.ui.jankCounts[screenName] ?: 0
             it.copy(ui = it.ui.copy(jankCounts = it.ui.jankCounts + (screenName to (current + 1))))
         }
+        logger.w("Frame lento (Jank) detectado na tela [%s]", screenName)
     }
 
     override fun trackRecomposition(composableName: String) {
@@ -125,8 +106,6 @@ class AppHealthTrackerImpl @Inject constructor(
             it.copy(ui = it.ui.copy(recompositionCounts = it.ui.recompositionCounts + (composableName to (current + 1))))
         }
     }
-
-    // --- Delegação de Sistema (MemoryTracker & BatteryTracker) ---
 
     override fun trackMemory(metrics: MemoryMetrics) {
         _metrics.update { 
@@ -149,6 +128,7 @@ class AppHealthTrackerImpl @Inject constructor(
         _metrics.update { 
             it.copy(memory = it.memory.copy(gcCount = it.memory.gcCount + 1))
         }
+        logger.d("Garbage Collection detectado pelo sentinela.")
     }
 
     override fun trackBattery(metrics: BatteryMetrics) {
@@ -158,67 +138,46 @@ class AppHealthTrackerImpl @Inject constructor(
         }
     }
 
-    // --- Infraestrutura e Inicialização ---
-
     override fun trackApiLatency(endpoint: String, durationMs: Long) {
         _metrics.update { 
             it.copy(ui = it.ui.copy(apiLatencies = it.ui.apiLatencies + (endpoint to durationMs)))
         }
     }
 
-    /**
-     * Registra erros globais no estado das métricas.
-     */
     override fun trackError(message: String) {
         _metrics.update { it.copy(lastError = message) }
+        // Utilizamos o método 'e' que apenas loga, evitando o loop infinito com 'logAndTrack'
+        logger.e(message = "Erro de Saúde do App: %s", args = arrayOf(message))
     }
 
-    /**
-     * Carrega um inicializador de módulo via Hilt Provider.
-     * 
-     * @param clazz A classe do inicializador a ser buscada no mapa de injeção.
-     * @param isParallel Se verdadeiro, o tempo de inicialização será registrado como paralelo.
-     */
     override fun <T : ModuleInitializer> load(clazz: Class<T>, isParallel: Boolean) {
         val provider = initializers[clazz]
         if (provider != null) {
             loadModule(provider.get(), isParallel)
         } else {
-            Log.e("AppHealthTracker", "ERRO CRÍTICO: Inicializador não configurado no Hilt: ${clazz.simpleName}")
-            trackError("Falha de DI: Modulo ${clazz.simpleName} não mapeado.")
+            val errorMsg = "Inicializador não configurado no Hilt: ${clazz.simpleName}"
+            trackError(errorMsg)
         }
     }
 
-    /**
-     * Executa a lógica de inicialização de um [ModuleInitializer].
-     * 
-     * Implementa proteção contra dependência circular e garante que cada módulo seja 
-     * inicializado apenas uma vez no ciclo de vida do processo.
-     */
     override fun loadModule(initializer: ModuleInitializer, isParallel: Boolean) {
         val moduleName = initializer.name
         
-        if (initializedModules.contains(moduleName)) {
-            Log.d("AppHealthTracker", "Modulo $moduleName já inicializado. Ignorando.")
-            return
-        }
+        if (initializedModules.contains(moduleName)) return
 
         if (initializationStack.contains(moduleName)) {
             val cycle = initializationStack.joinToString(" -> ") + " -> $moduleName"
-            Log.e("AppHealthTracker", "DEPENDÊNCIA CIRCULAR DETECTADA: $cycle")
-            trackError("Erro de Inicialização: Ciclo detectado em $moduleName")
+            trackError("DEPENDÊNCIA CIRCULAR: $cycle")
             return
         }
 
         initializationStack.add(moduleName)
-        
         val start = TimeUtils.nowNanos()
         try {
+            logger.d("Iniciando módulo: %s", moduleName)
             initializer.initialize()
             val durationMs = TimeUtils.calculateDurationFrom(start)
-            
             initializedModules.add(moduleName)
-            
             _metrics.update { 
                 val updatedStartup = if (isParallel) {
                     it.startup.copy(parallelModuleLoadTimes = it.startup.parallelModuleLoadTimes + (moduleName to durationMs))
@@ -227,9 +186,12 @@ class AppHealthTrackerImpl @Inject constructor(
                 }
                 it.copy(startup = updatedStartup)
             }
+            logger.i("Módulo [%s] inicializado em %.2f ms", moduleName, durationMs)
         } catch (e: Exception) {
-            Log.e("AppHealthTracker", "Falha ao inicializar modulo $moduleName", e)
-            trackError("Falha no modulo $moduleName: ${e.message}")
+            val errorMsg = "Falha no modulo $moduleName: ${e.message}"
+            trackError(errorMsg)
+            // Registra a exceção real sem causar recursão
+            logger.e(e, errorMsg)
         } finally {
             initializationStack.remove(moduleName)
         }

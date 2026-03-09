@@ -5,6 +5,7 @@ import br.com.coderednt.coreapp.core.architecture.BaseApplication
 import br.com.coderednt.coreapp.core.common.performance.CommonModuleInitializer
 import br.com.coderednt.coreapp.core.database.performance.DatabaseModuleInitializer
 import br.com.coderednt.coreapp.core.datastore.performance.DataStoreModuleInitializer
+import br.com.coderednt.coreapp.core.logging.performance.LoggingModuleInitializer
 import br.com.coderednt.coreapp.core.monitoring.performance.*
 import br.com.coderednt.coreapp.core.navigation.performance.NavigationModuleInitializer
 import br.com.coderednt.coreapp.core.ui.performance.UiModuleInitializer
@@ -32,6 +33,7 @@ class MainApplication : BaseApplication() {
         appHealthTracker.sync {
             // --- INFRAESTRUTURA BASE (Essencial para o funcionamento do SDK) ---
             module<MonitoringModuleInitializer>()
+            module<LoggingModuleInitializer>() // Adicionado inicializador de logging
             module<CommonModuleInitializer>()
             
             // --- CORE SERVICES (Persistência, Analytics e Navegação) ---

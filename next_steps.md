@@ -4,8 +4,9 @@ Este documento apresenta uma análise técnica do estado atual do projeto e mape
 
 ## 📊 1. Observabilidade e Telemetria Remota
 Atualmente, o módulo `:monitoring` e `:performance` coletam dados locais. Para um ambiente produtivo, precisamos de:
-- [ ] **Logging Estruturado**: Criar um módulo `:core:logging` utilizando uma abstração sobre o **Timber** para logs que mudam de comportamento entre Debug (Logcat) e Release (Crashlytics).
-- [ ] **Rastreamento de Erros Silenciosos**: Capturar exceções não fatais dentro dos inicializadores de módulos para entender falhas parciais no boot.
+- [x] **Logging Estruturado**: Criar um módulo `:core:logging` utilizando uma abstração sobre o **Timber** para logs que mudam de comportamento entre Debug (Logcat) e Release (Crashlytics).
+- [x] **Rastreamento de Erros Silenciosos**: Capturar exceções não fatais dentro dos inicializadores de módulos para entender falhas parciais no boot.
+- [ ] **Integração com Backend**: Implementar um sistema de "Push" para enviar as métricas consolidadas (`HealthMetrics`) para um endpoint (Firebase, Sentry ou Backend proprietário).
 
 ## 🛡️ 2. Segurança e Hardening
 Um SDK profissional deve garantir a integridade dos dados e do ambiente:

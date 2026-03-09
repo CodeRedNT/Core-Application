@@ -23,6 +23,7 @@ O projeto adota uma estratégia de **Modularização por Camadas e Funcionalidad
 | `:architecture` | Componentes base de arquitetura (BaseViewModel, State management). | `class MyViewModel : BaseViewModel<State, Event>()` |
 | `:common` | Utilitários compartilhados, extensões e helpers (Tempo, Strings, etc). | `TimeUtils.nowNanos()` |
 | `:monitoring` | Contratos de monitoramento e interfaces de métricas. | `interface PerformanceMonitor` |
+| `:logging` | Logging estruturado com integração automática ao tracker de saúde. | `logger.e(e, "Falha ao carregar dados")` |
 | `:domain` | Regras de negócio puras (Kotlin-only), UseCases e Entidades. | `class GetUserDataUseCase(...)` |
 | `:ui` | Design System, componentes Compose customizados e temas. | `CoreAppTheme { ... }` |
 | `:navigation` | Infraestrutura de navegação baseada em rotas e monitoramento. | `AppNavigator.navigate(Route.Profile)` |
@@ -67,3 +68,4 @@ class MyModuleInitializer @Inject constructor() : ModuleInitializer {
 
 - [Guia de Arquitetura](ARCHITECTURE_GUIDE.md)
 - [Roadmap de Revisão](ROADMAP_REVIEW.md)
+- [Próximos Passos](next_steps.md)

@@ -40,6 +40,7 @@ dependencies {
     implementation(project(":common"))
     implementation(project(":ui"))
     implementation(project(":monitoring"))
+    implementation(project(":logging"))
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.compose)

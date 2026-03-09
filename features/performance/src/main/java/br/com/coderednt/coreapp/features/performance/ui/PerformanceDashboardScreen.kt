@@ -45,7 +45,8 @@ enum class PerformanceTab(val label: String, val icon: ImageVector) {
     STARTUP("Startup", Icons.Rounded.RocketLaunch),
     MEMORY("Memory", Icons.Rounded.Memory),
     NETWORK("Network", Icons.Rounded.CloudSync),
-    BATTERY("Battery", Icons.Rounded.BatteryChargingFull)
+    BATTERY("Battery", Icons.Rounded.BatteryChargingFull),
+    LOGS("Logs", Icons.Rounded.ListAlt)
 }
 
 /**
@@ -101,6 +102,7 @@ fun PerformanceDashboardScreen(
                     PerformanceTab.MEMORY -> MemoryTabContent(uiState)
                     PerformanceTab.NETWORK -> NetworkTabContent(uiState)
                     PerformanceTab.BATTERY -> BatteryTabContent(uiState)
+                    PerformanceTab.LOGS -> LogsTabContent(uiState)
                 }
             }
         }
@@ -344,6 +346,30 @@ fun BatteryTabContent(uiState: HealthMetrics) {
                 value = "${uiState.battery.temperature} °C",
                 icon = Icons.Rounded.DeviceThermostat,
                 description = "Health: ${uiState.battery.health}"
+            )
+        }
+    }
+}
+
+/**
+ * Conteúdo da aba de Logs.
+ * Exibe o último erro crítico capturado pelo Logger.e().
+ */
+@Composable
+fun LogsTabContent(uiState: HealthMetrics) {
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        item {
+            MetricCard(
+                title = "Last System Error",
+                value = uiState.lastError ?: "No critical errors",
+                icon = Icons.Rounded.ErrorOutline,
+                description = "Captured via Logger.e()",
+                containerColor = if (uiState.lastError != null) MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f) else MaterialTheme.colorScheme.surfaceVariant,
+                contentColor = if (uiState.lastError != null) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
             )
         }
     }

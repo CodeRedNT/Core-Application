@@ -85,6 +85,7 @@ dependencies {
     implementation(project(":analytics"))
     implementation(project(":domain"))
     implementation(project(":monitoring"))
+    implementation(project(":logging"))
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)

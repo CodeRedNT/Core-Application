@@ -34,6 +34,7 @@ include(":navigation")
 include(":analytics")
 include(":architecture")
 include(":domain")
+include(":logging")
 
 // Mapeamento manual dos diretórios
 project(":common").projectDir = file("core/common")
@@ -46,3 +47,4 @@ project(":navigation").projectDir = file("core/navigation")
 project(":analytics").projectDir = file("core/analytics")
 project(":architecture").projectDir = file("core/architecture")
 project(":domain").projectDir = file("core/domain")
+project(":logging").projectDir = file("core/logging")

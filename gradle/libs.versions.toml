@@ -46,6 +46,7 @@ dependencyAnalysis = "1.33.0"
 roborazzi = "1.32.2"
 robolectric = "4.13"
 mockk = "1.13.12"
+timber = "5.0.1"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -104,6 +105,7 @@ roborazzi-compose = { group = "io.github.takahirom.roborazzi", name = "roborazzi
 roborazzi-junit-rule = { group = "io.github.takahirom.roborazzi", name = "roborazzi-junit-rule", version.ref = "roborazzi" }
 robolectric = { group = "org.robolectric", name = "robolectric", version.ref = "robolectric" }
 mockk = { group = "io.mockk", name = "mockk", version.ref = "mockk" }
+timber = { group = "com.jakewharton.timber", name = "timber", version.ref = "timber" }
 
 # Módulos Internos (Core Application)
 core-common = { group = "br.com.coderednt", name = "common", version = "1.0.0" }
