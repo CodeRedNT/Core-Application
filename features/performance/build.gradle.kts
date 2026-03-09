@@ -20,8 +20,8 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
-    kotlinOptions {
-        jvmTarget = "17"
+    kotlin {
+        jvmToolchain(17)
     }
 
     buildFeatures {
@@ -36,6 +36,7 @@ android {
 }
 
 dependencies {
+    implementation(project(":architecture"))
     implementation(project(":common"))
     implementation(project(":ui"))
     implementation(project(":monitoring"))

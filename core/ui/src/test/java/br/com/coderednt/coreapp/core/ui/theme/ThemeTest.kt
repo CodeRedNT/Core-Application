@@ -1,9 +1,8 @@
 package br.com.coderednt.coreapp.core.ui.theme
 
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.ui.test.junit4.createComposeRule
-import androidx.compose.ui.test.onNodeWithText
+import org.junit.Assert.assertNotNull
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -18,16 +17,35 @@ class ThemeTest {
     val composeTestRule = createComposeRule()
 
     @Test
-    fun `theme should provide material typography`() {
+    fun theme_should_provide_colors() {
         composeTestRule.setContent {
             CoreAppTheme {
-                Text(
-                    text = "Theme Test",
-                    style = MaterialTheme.typography.bodyLarge
-                )
+                val colorScheme = MaterialTheme.colorScheme
+                assertNotNull(colorScheme.primary)
+                assertNotNull(colorScheme.secondary)
+                assertNotNull(colorScheme.background)
             }
         }
+    }
 
-        composeTestRule.onNodeWithText("Theme Test").assertExists()
+    @Test
+    fun theme_should_provide_typography() {
+        composeTestRule.setContent {
+            CoreAppTheme {
+                val typography = MaterialTheme.typography
+                assertNotNull(typography.headlineMedium)
+                assertNotNull(typography.bodyLarge)
+            }
+        }
+    }
+
+    @Test
+    fun theme_should_provide_shapes() {
+        composeTestRule.setContent {
+            CoreAppTheme {
+                val shapes = MaterialTheme.shapes
+                assertNotNull(shapes.medium)
+            }
+        }
     }
 }

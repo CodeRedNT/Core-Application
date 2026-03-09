@@ -35,6 +35,7 @@ android {
 
 dependencies {
     implementation(project(":common"))
+    implementation(project(":monitoring"))
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
 }

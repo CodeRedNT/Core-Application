@@ -38,6 +38,7 @@ dependencies {
     implementation(libs.kotlinx.coroutines.android)
     implementation(project(":common"))
     implementation(project(":domain"))
+    implementation(project(":monitoring"))
     
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)

@@ -75,6 +75,7 @@ android {
 }
 
 dependencies {
+    implementation(project(":architecture"))
     implementation(project(":common"))
     implementation(project(":ui"))
     implementation(project(":performance"))

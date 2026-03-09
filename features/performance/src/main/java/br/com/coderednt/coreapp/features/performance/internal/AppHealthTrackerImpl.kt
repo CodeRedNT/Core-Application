@@ -14,8 +14,14 @@ import javax.inject.Provider
 import javax.inject.Singleton
 
 /**
- * Implementação orquestradora do AppHealthTracker com suporte a Safe Initializers.
- * Centraliza o estado das métricas e delega a lógica de atualização.
+ * Implementação orquestradora do [AppHealthTracker] com suporte a Safe Initializers.
+ * 
+ * Esta classe centraliza o estado de todas as métricas de saúde do aplicativo 
+ * (Startup, UI, Memória, Bateria) e gerencia o ciclo de vida de inicialização 
+ * dos módulos, prevenindo dependências circulares e re-inicializações.
+ * 
+ * @property analyticsTracker Rastreador para reportar eventos críticos e erros.
+ * @property initializers Mapa de provedores de inicialização injetados via Hilt Multibinding.
  */
 @Singleton
 class AppHealthTrackerImpl @Inject constructor(
@@ -24,18 +30,28 @@ class AppHealthTrackerImpl @Inject constructor(
 ) : AppHealthTracker {
 
     private val _metrics = MutableStateFlow(HealthMetrics())
+    
+    /**
+     * Fluxo de estado contínuo das métricas, acessível por ViewModels para renderização na UI.
+     */
     override val metrics: StateFlow<HealthMetrics> = _metrics.asStateFlow()
 
-    // Controle de Safe Initializers (Prevenção de dependência circular e re-inicialização)
+    // Controle de Safe Initializers
     private val initializedModules = Collections.synchronizedSet(mutableSetOf<String>())
     private val initializationStack = Collections.synchronizedList(mutableListOf<String>())
 
     // --- Métricas de Ciclo de Vida do App ---
 
+    /**
+     * Marca o início do ciclo de vida da Application.
+     */
     override fun onAppStart() {
         AppStartupTracker.markAppStart()
     }
 
+    /**
+     * Marca o fim da fase de inicialização da Application e captura a memória base inicial.
+     */
     override fun onAppEnd() {
         AppStartupTracker.markAppEnd()
         val runtime = Runtime.getRuntime()
@@ -46,6 +62,9 @@ class AppHealthTrackerImpl @Inject constructor(
         }
     }
 
+    /**
+     * Consolida as métricas de startup (OS Overhead, Provider Init, App Init).
+     */
     override fun trackAppStartup() {
         val osOverhead = TimeUtils.nanosToMillis(AppStartupTracker.providerStartTimeNanos - AppStartupTracker.processStartTimeNanos)
         val providerInit = TimeUtils.nanosToMillis(AppStartupTracker.appStartTimeNanos - AppStartupTracker.providerStartTimeNanos)
@@ -61,6 +80,9 @@ class AppHealthTrackerImpl @Inject constructor(
         }
     }
 
+    /**
+     * Registra o tempo de duração de uma fase específica do startup.
+     */
     override fun trackPhaseTime(phase: StartupPhase, durationMs: Double) {
         _metrics.update { 
             val updatedStartup = when(phase) {
@@ -144,10 +166,19 @@ class AppHealthTrackerImpl @Inject constructor(
         }
     }
 
+    /**
+     * Registra erros globais no estado das métricas.
+     */
     override fun trackError(message: String) {
         _metrics.update { it.copy(lastError = message) }
     }
 
+    /**
+     * Carrega um inicializador de módulo via Hilt Provider.
+     * 
+     * @param clazz A classe do inicializador a ser buscada no mapa de injeção.
+     * @param isParallel Se verdadeiro, o tempo de inicialização será registrado como paralelo.
+     */
     override fun <T : ModuleInitializer> load(clazz: Class<T>, isParallel: Boolean) {
         val provider = initializers[clazz]
         if (provider != null) {
@@ -158,6 +189,12 @@ class AppHealthTrackerImpl @Inject constructor(
         }
     }
 
+    /**
+     * Executa a lógica de inicialização de um [ModuleInitializer].
+     * 
+     * Implementa proteção contra dependência circular e garante que cada módulo seja 
+     * inicializado apenas uma vez no ciclo de vida do processo.
+     */
     override fun loadModule(initializer: ModuleInitializer, isParallel: Boolean) {
         val moduleName = initializer.name
         

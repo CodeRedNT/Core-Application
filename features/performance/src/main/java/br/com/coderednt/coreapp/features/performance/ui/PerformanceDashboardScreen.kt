@@ -25,14 +25,22 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import br.com.coderednt.coreapp.core.monitoring.performance.HealthMetrics
 import java.util.Locale
 
+/**
+ * Rota de entrada para o Dashboard de Performance.
+ * 
+ * Gerencia a injeção do ViewModel e observa o estado das métricas de saúde do app.
+ */
 @Composable
 fun PerformanceDashboardRoute(
     viewModel: PerformanceViewModel = hiltViewModel()
 ) {
-    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val uiState by viewModel.metricsState.collectAsStateWithLifecycle()
     PerformanceDashboardScreen(uiState = uiState)
 }
 
+/**
+ * Categorias de métricas exibidas no dashboard.
+ */
 enum class PerformanceTab(val label: String, val icon: ImageVector) {
     STARTUP("Startup", Icons.Rounded.RocketLaunch),
     MEMORY("Memory", Icons.Rounded.Memory),
@@ -40,6 +48,14 @@ enum class PerformanceTab(val label: String, val icon: ImageVector) {
     BATTERY("Battery", Icons.Rounded.BatteryChargingFull)
 }
 
+/**
+ * Tela principal do Dashboard de Performance.
+ * 
+ * Exibe métricas detalhadas sobre o estado do aplicativo divididas em abas 
+ * interativas, utilizando Material Design 3 e animações de transição.
+ * 
+ * @param uiState O estado consolidado das métricas obtido do tracker de saúde.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PerformanceDashboardScreen(
@@ -91,6 +107,10 @@ fun PerformanceDashboardScreen(
     }
 }
 
+/**
+ * Conteúdo da aba de Startup.
+ * Exibe o TTID (Time to Initial Display), TTFD e os custos de cada fase de inicialização.
+ */
 @Composable
 fun StartupTabContent(uiState: HealthMetrics) {
     val ttfdValue = uiState.ui.renderTimes["MainActivity"] ?: uiState.ui.renderTimes["MainScreen"] ?: 0L
@@ -179,6 +199,10 @@ fun StartupTabContent(uiState: HealthMetrics) {
     }
 }
 
+/**
+ * Conteúdo da aba de Memória.
+ * Exibe o uso da Heap da JVM, contagem de GC e avisos de sistema.
+ */
 @Composable
 fun MemoryTabContent(uiState: HealthMetrics) {
     LazyColumn(
@@ -245,6 +269,10 @@ fun MemoryTabContent(uiState: HealthMetrics) {
     }
 }
 
+/**
+ * Conteúdo da aba de Rede.
+ * Exibe as latências das chamadas de API registradas.
+ */
 @Composable
 fun NetworkTabContent(uiState: HealthMetrics) {
     LazyColumn(
@@ -270,6 +298,10 @@ fun NetworkTabContent(uiState: HealthMetrics) {
     }
 }
 
+/**
+ * Conteúdo da aba de Bateria.
+ * Exibe o nível do dispositivo, corrente instantânea e temperatura.
+ */
 @Composable
 fun BatteryTabContent(uiState: HealthMetrics) {
     LazyColumn(
@@ -317,11 +349,30 @@ fun BatteryTabContent(uiState: HealthMetrics) {
     }
 }
 
+/**
+ * Classificação de performance baseada em limites de tempo.
+ */
 enum class PerformanceRating(val label: String, val color: @Composable () -> Color) {
-    GOOD("Good", { Color(0xFF4CAF50) }), FAIR("Fair", { Color(0xFFFFC107) }), POOR("Poor", { Color(0xFFF44336) })
+    GOOD("Good", { Color(0xFF4CAF50) }), 
+    FAIR("Fair", { Color(0xFFFFC107) }), 
+    POOR("Poor", { Color(0xFFF44336) })
 }
-fun getTtidRating(ms: Double): PerformanceRating = when { ms <= 2000.0 -> PerformanceRating.GOOD; ms <= 5000.0 -> PerformanceRating.FAIR; else -> PerformanceRating.POOR }
-fun getTtfdRating(ms: Long): PerformanceRating = when { ms <= 3000 -> PerformanceRating.GOOD; ms <= 6000 -> PerformanceRating.FAIR; else -> PerformanceRating.POOR }
+
+/** Classifica o tempo de startup (TTID). */
+fun getTtidRating(ms: Double): PerformanceRating = when { 
+    ms <= 2000.0 -> PerformanceRating.GOOD
+    ms <= 5000.0 -> PerformanceRating.FAIR
+    else -> PerformanceRating.POOR 
+}
+
+/** Classifica o tempo de renderização da tela principal (TTFD). */
+fun getTtfdRating(ms: Long): PerformanceRating = when { 
+    ms <= 3000 -> PerformanceRating.GOOD
+    ms <= 6000 -> PerformanceRating.FAIR
+    else -> PerformanceRating.POOR 
+}
+
+/** Formata durações em ns, ms ou s com base na magnitude do valor. */
 fun formatDuration(ms: Double): String {
     val absMs = kotlin.math.abs(ms)
     return when {
@@ -333,11 +384,22 @@ fun formatDuration(ms: Double): String {
 
 @Composable
 fun PhaseItem(title: String, value: Double, desc: String) {
-    MetricCard(title = title, value = formatDuration(value), icon = Icons.Rounded.Category, description = desc, containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.4f))
+    MetricCard(
+        title = title, 
+        value = formatDuration(value), 
+        icon = Icons.Rounded.Category, 
+        description = desc, 
+        containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.4f)
+    )
 }
 
 @Composable
-fun ExpandableSection(title: String, totalTime: String, totalLabel: String = "Total", content: @Composable () -> Unit) {
+fun ExpandableSection(
+    title: String, 
+    totalTime: String, 
+    totalLabel: String = "Total", 
+    content: @Composable () -> Unit
+) {
     var expanded by remember { mutableStateOf(false) }
     Column(modifier = Modifier.fillMaxWidth().clickable { expanded = !expanded }.padding(vertical = 8.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
@@ -347,19 +409,32 @@ fun ExpandableSection(title: String, totalTime: String, totalLabel: String = "To
             }
             Icon(imageVector = if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore, contentDescription = null)
         }
-        AnimatedVisibility(visible = expanded) { Column(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 8.dp)) { content() } }
+        AnimatedVisibility(visible = expanded) { 
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 8.dp)) { 
+                content() 
+            } 
+        }
     }
 }
 
 @Composable
-fun MetricCard(title: String, value: String, icon: ImageVector, description: String? = null, containerColor: Color = MaterialTheme.colorScheme.surfaceVariant, contentColor: Color = MaterialTheme.colorScheme.primary) {
+fun MetricCard(
+    title: String, 
+    value: String, 
+    icon: ImageVector, 
+    description: String? = null, 
+    containerColor: Color = MaterialTheme.colorScheme.surfaceVariant, 
+    contentColor: Color = MaterialTheme.colorScheme.primary
+) {
     Card(modifier = Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = containerColor)) {
         Row(modifier = Modifier.padding(16.dp).fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Icon(imageVector = icon, contentDescription = null, tint = contentColor); Spacer(modifier = Modifier.padding(8.dp))
             Column {
                 Text(text = title, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Text(text = value, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                if (description != null) { Text(text = description, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)) }
+                if (description != null) { 
+                    Text(text = description, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)) 
+                }
             }
         }
     }

@@ -43,4 +43,5 @@ dependencies {
     
     implementation(libs.kotlinx.coroutines.android)
     implementation(project(":common"))
+    implementation(project(":monitoring"))
 }
