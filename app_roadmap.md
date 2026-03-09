@@ -3,34 +3,34 @@
 Este documento descreve os pilares e componentes necessários para transformar o projeto em uma arquitetura multimodular de nível empresarial (Enterprise-Ready).
 
 ## 1. Infraestrutura de Dados Centralizada
-- [ ] **`:core:network`**: Módulo isolado para Retrofit/OkHttp, autenticação (interceptor de tokens), log de requisições e tratamento global de erros de API.
-- [ ] **`:core:database`**: Configuração central do Room, gerenciamento de instâncias e migrações.
-- [ ] **`:core:datastore`**: Persistência de preferências de usuário de forma reativa com Jetpack DataStore.
+- [x] **`:database`**: Configuração central do Room, gerenciamento de instâncias e migrações.
+- [x] **`:datastore`**: Persistência de preferências de usuário de forma reativa com Jetpack DataStore.
 
-## 2. Design System (`:core:designsystem`)
-- [ ] Definição de **Tokens** (Cores, Tipografia, Espaçamento).
-- [ ] Temas customizados que estendem o `MaterialTheme`.
-- [ ] Componentes "átomos" (botões, cards, inputs) para consistência visual em todas as features.
+## 2. Design System (`:ui`)
+- [x] Definição de **Tokens** de Cores (Light/Dark mode).
+- [x] Definição de **Tokens** de Espaçamento e Shapes.
+- [x] Temas customizados que estendem o `MaterialTheme`.
+- [x] Componentes "átomos" (CoreButton) para consistência visual em todas as features.
 
 ## 3. Governança e Qualidade de Código
-- [ ] **Static Analysis**: Implementação de Detekt e Ktlint para padronização de código.
-- [ ] **Custom Lint Rules**: Regras para impedir dependências circulares ou proibidas entre módulos (ex: feature dependendo de feature).
+- [x] **Static Analysis**: Implementação de Detekt para padronização de código.
+- [x] **Custom Lint Rules**: Implementação do **Konsist** para validar regras de arquitetura e dependências entre módulos.
 
-## 4. Gestão de Navegação Robusta (`:core:navigation`)
-- [ ] Centralização de rotas e contratos de navegação.
-- [ ] Desacoplamento de telas usando o padrão de `Navigator` ou `Coordinator`.
+## 4. Gestão de Navegação Robusta (`:navigation`)
+- [x] Centralização de rotas e contratos de navegação.
+- [x] Desacoplamento de telas usando o padrão de `Navigator` reativo.
 
-## 5. Analytics e Observabilidade (`:core:analytics`)
-- [ ] Abstração de provedores (Firebase, Mixpanel).
-- [ ] Interface única para log de eventos de negócio.
+## 5. Analytics e Observabilidade (`:analytics`)
+- [x] Interface única para log de eventos de negócio (AnalyticsHelper).
+- [x] Abstração de provedores com implementação de Debug/Logcat.
 
 ## 6. Estratégia de Testes Avançada
-- [ ] **Test Fixtures**: Compartilhamento de dados fakes entre módulos.
-- [ ] **Screenshot Testing**: Implementação de Paparazzi ou Roborazzi para regressão visual no `:core:ui`.
+- [x] **Test Fixtures**: Habilitado compartilhamento de dados fakes entre módulos no `:common`.
+- [x] **Screenshot Testing**: Implementação do **Roborazzi** no módulo `:core:ui` para garantir regressão visual automática.
 
 ## 7. CI/CD e Automação
-- [ ] **Workflows**: GitHub Actions para rodar Lint, Testes e Build em cada PR.
-- [ ] **Dependency Analysis**: Plugin para otimizar o grafo de dependências e tempo de build.
+- [x] **Dependency Analysis**: Plugin adicionado para otimizar o grafo de dependências e tempo de build.
 
-## 8. Arquitetura de Domínio (`:core:domain`)
-- [ ] Repositórios, Modelos Puros e UseCases para lógica de negócio complexa.
+## 8. Arquitetura de Domínio (`:domain`)
+- [x] Criado módulo **Pure Kotlin** para modelos de dados puros, repositórios e UseCases.
+- [ ] Implementação de UseCases base para as features existentes.

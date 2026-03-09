@@ -1,29 +1,31 @@
 package br.com.coderednt.coreapp
 
 import br.com.coderednt.coreapp.core.common.base.BaseApplication
-import br.com.coderednt.coreapp.core.common.performance.CommonModuleInitializer
 import br.com.coderednt.coreapp.core.monitoring.performance.*
-import br.com.coderednt.coreapp.core.ui.performance.UiModuleInitializer
-import br.com.coderednt.coreapp.features.performance.performance.PerformanceModuleInitializer
 import dagger.hilt.android.HiltAndroidApp
+import javax.inject.Inject
 
 /**
  * Classe de aplicação principal que inicializa o grafo de dependências do Hilt
  * e configura os módulos do sistema através do AppHealthTracker.
+ * Atualizada para carregar módulos automaticamente via injeção de mapa.
  */
 @HiltAndroidApp
 class MainApplication : BaseApplication() {
 
+    @Inject
+    lateinit var initializers: Map<Class<out ModuleInitializer>, @JvmSuppressWildcards ModuleInitializer>
+
     /**
      * Define a ordem de inicialização dos módulos do aplicativo.
-     * Módulos críticos para o monitoramento e UI base são carregados de forma síncrona.
+     * Carrega todos os módulos vinculados ao Hilt automaticamente.
      */
     override fun onCreateModules() {
         appHealthTracker.sync {
-            module<MonitoringModuleInitializer>()
-            module<CommonModuleInitializer>()
-            module<UiModuleInitializer>()
-            module<PerformanceModuleInitializer>()
+            // Carrega dinamicamente todos os inicializadores registrados no Hilt
+            initializers.values.forEach { initializer ->
+                appHealthTracker.loadModule(initializer)
+            }
         }
 
         appHealthTracker.async {

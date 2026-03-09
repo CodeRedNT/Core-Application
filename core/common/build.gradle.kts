@@ -4,8 +4,6 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.google.devtools.ksp)
     alias(libs.plugins.hilt)
-    id("maven-publish")
-    id("jacoco")
 }
 
 android {
@@ -15,66 +13,48 @@ android {
     defaultConfig {
         minSdk = 24
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        consumerProguardFiles("consumer-rules.pro")
     }
 
+    buildTypes {
+        release {
+            isMinifyEnabled = false
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
+        }
+    }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
-
     kotlin {
         jvmToolchain(17)
     }
-
+    
     buildFeatures {
         compose = true
     }
-    
-    buildTypes {
-        getByName("debug") {
-            enableUnitTestCoverage = true
-        }
-    }
-    
-    publishing {
-        singleVariant("release") {
-            withSourcesJar()
+
+    @Suppress("UnstableApiUsage")
+    androidComponents {
+        beforeVariants { variantBuilder ->
+            variantBuilder.enableTestFixtures = true
         }
     }
 }
 
 dependencies {
-    api(project(":monitoring"))
-
+    implementation(project(":monitoring"))
+    implementation(libs.kotlinx.coroutines.android)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)
-    implementation(platform(libs.androidx.compose.bom))
-    implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.runtime)
-
-    api(libs.hilt.android)
+    implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
-    
-    implementation(libs.androidx.metrics.performance)
-    
+
     testImplementation(libs.junit)
-    testImplementation("io.mockk:mockk:1.13.12")
-    androidTestImplementation(libs.androidx.junit)
-    androidTestImplementation(libs.androidx.espresso.core)
-}
-
-afterEvaluate {
-    publishing {
-        publications {
-            register<MavenPublication>("release") {
-                groupId = "br.com.coderednt.sdk"
-                artifactId = "core-common"
-                version = "1.0.0"
-
-                afterEvaluate {
-                    from(components["release"])
-                }
-            }
-        }
-    }
+    testImplementation(libs.mockk)
+    testImplementation(libs.kotlinx.coroutines.test)
 }

@@ -75,9 +75,15 @@ android {
 }
 
 dependencies {
-    implementation(libs.core.common)
-    implementation(libs.core.ui)
-    implementation(libs.core.performance)
+    implementation(project(":common"))
+    implementation(project(":ui"))
+    implementation(project(":performance"))
+    implementation(project(":database"))
+    implementation(project(":datastore"))
+    implementation(project(":navigation"))
+    implementation(project(":analytics"))
+    implementation(project(":domain"))
+    implementation(project(":monitoring"))
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
@@ -100,7 +106,7 @@ dependencies {
     // Test dependencies
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
-    testImplementation("io.mockk:mockk:1.13.12")
+    testImplementation(libs.mockk)
 
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
