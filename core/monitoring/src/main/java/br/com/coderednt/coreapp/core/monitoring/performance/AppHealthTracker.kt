@@ -78,6 +78,15 @@ data class BatteryMetrics(
 }
 
 /**
+ * Informações sobre o ambiente de execução capturadas pelo EnvironmentManager.
+ */
+data class DeviceEnvironment(
+    val type: String = "Unknown",
+    val isEmulator: Boolean = false,
+    val isRooted: Boolean = false
+)
+
+/**
  * Modelo agregado contendo todo o estado de saúde e performance do aplicativo.
  */
 data class HealthMetrics(
@@ -85,6 +94,7 @@ data class HealthMetrics(
     val ui: UIMetrics = UIMetrics(),
     val memory: MemoryMetrics = MemoryMetrics(),
     val battery: BatteryMetrics = BatteryMetrics(),
+    val environment: DeviceEnvironment = DeviceEnvironment(),
     val lastError: String? = null
 )
 

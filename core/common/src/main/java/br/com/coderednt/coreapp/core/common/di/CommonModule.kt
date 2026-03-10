@@ -1,12 +1,15 @@
 package br.com.coderednt.coreapp.core.common.di
 
+import br.com.coderednt.coreapp.core.common.manager.EnvironmentManagerImpl
 import br.com.coderednt.coreapp.core.common.performance.CommonModuleInitializer
+import br.com.coderednt.coreapp.core.domain.manager.EnvironmentManager
 import br.com.coderednt.coreapp.core.monitoring.performance.*
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import dagger.multibindings.IntoMap
+import javax.inject.Singleton
 
 @Module
 @InstallIn(SingletonComponent::class)
@@ -16,4 +19,8 @@ abstract class CommonModule {
     @IntoMap
     @StartupKey(CommonModuleInitializer::class)
     abstract fun bindCommonInitializer(impl: CommonModuleInitializer): ModuleInitializer
+
+    @Binds
+    @Singleton
+    abstract fun bindEnvironmentManager(impl: EnvironmentManagerImpl): EnvironmentManager
 }

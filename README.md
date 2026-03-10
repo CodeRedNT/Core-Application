@@ -23,13 +23,13 @@ O projeto adota uma estratégia de **Modularização por Camadas e Funcionalidad
 | `:architecture` | Componentes base de arquitetura (BaseViewModel, State management). | `class MyViewModel : BaseViewModel<State, Event>()` |
 | `:common` | Utilitários compartilhados, extensões e helpers (Tempo, Strings, etc). | `TimeUtils.nowNanos()` |
 | `:monitoring` | Contratos de monitoramento e interfaces de métricas. | `interface PerformanceMonitor` |
-| `:logging` | Logging estruturado com integração automática ao tracker de saúde. | `logger.e(e, "Falha ao carregar dados")` |
+| `:logging` | Logging estruturado com integração automática ao tracker de saúde. | `logger.logAndTrack(e, "Erro")` |
 | `:domain` | Regras de negócio puras (Kotlin-only), UseCases e Entidades. | `class GetUserDataUseCase(...)` |
 | `:ui` | Design System, componentes Compose customizados e temas. | `CoreAppTheme { ... }` |
 | `:navigation` | Infraestrutura de navegação baseada em rotas e monitoramento. | `AppNavigator.navigate(Route.Profile)` |
 | `:analytics` | Abstração para envio de eventos e logs de analytics. | `AnalyticsTracker.logEvent("button_click")` |
 | `:database` | Persistência local utilizando Room. | `userDao.insert(user)` |
-| `:datastore` | Armazenamento de preferências e pequenos estados via Jetpack DataStore. | `settingsDataStore.updateData { ... }` |
+| `:datastore` | Armazenamento seguro e de preferências via Jetpack DataStore/Security. | `secureStorage.saveString("key", "val")` |
 
 ### 🚀 Feature Modules
 
@@ -39,28 +39,26 @@ O projeto adota uma estratégia de **Modularização por Camadas e Funcionalidad
 
 ---
 
+## 🔐 Segurança e Hardening
+
+O SDK inclui suporte nativo para armazenamento criptografado utilizando o **Android Keystore**.
+```kotlin
+@Inject lateinit var secureStorage: SecureStorageRepository
+secureStorage.saveString("auth_token", "encrypted_data")
+```
+
+---
+
 ## 🚦 Fluxo de Inicialização (Safe Initialization)
 
 Para garantir que o app não sofra com ANRs ou crashes durante o startup, utilizamos um sistema de inicializadores seguros.
 
 ```kotlin
-// Exemplo de implementação em um módulo
 @Singleton
 class MyModuleInitializer @Inject constructor() : ModuleInitializer {
-    override fun init(context: Context) {
-        // Lógica de inicialização leve
-    }
+    override fun init(context: Context) { /* ... */ }
 }
 ```
-
----
-
-## 🛠️ Como Contribuir
-
-1. **KDoc**: Toda função pública deve ter documentação KDoc explicando parâmetros e retorno.
-2. **Clean Code**: Remova comentários óbvios ou obsoletos.
-3. **Responsabilidades**: Se uma classe está fazendo muito, considere mover para um UseCase ou um módulo específico.
-4. **Testes**: Mantenha a cobertura de testes ao adicionar novas funcionalidades.
 
 ---
 

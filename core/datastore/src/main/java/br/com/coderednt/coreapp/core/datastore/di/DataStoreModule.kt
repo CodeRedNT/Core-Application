@@ -6,6 +6,8 @@ import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.preferencesDataStoreFile
 import br.com.coderednt.coreapp.core.datastore.performance.DataStoreModuleInitializer
+import br.com.coderednt.coreapp.core.datastore.security.SecureStorageRepositoryImpl
+import br.com.coderednt.coreapp.core.domain.repository.SecureStorageRepository
 import br.com.coderednt.coreapp.core.monitoring.performance.ModuleInitializer
 import br.com.coderednt.coreapp.core.monitoring.performance.StartupKey
 import dagger.Binds
@@ -25,6 +27,10 @@ abstract class DataStoreModule {
     @IntoMap
     @StartupKey(DataStoreModuleInitializer::class)
     abstract fun bindDataStoreInitializer(impl: DataStoreModuleInitializer): ModuleInitializer
+
+    @Binds
+    @Singleton
+    abstract fun bindSecureStorageRepository(impl: SecureStorageRepositoryImpl): SecureStorageRepository
 
     companion object {
         @Provides

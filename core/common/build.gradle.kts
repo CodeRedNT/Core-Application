@@ -46,6 +46,7 @@ android {
 }
 
 dependencies {
+    implementation(project(":domain"))
     implementation(project(":monitoring"))
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.androidx.core.ktx)

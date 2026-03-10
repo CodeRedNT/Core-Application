@@ -10,8 +10,9 @@ Atualmente, o módulo `:monitoring` e `:performance` coletam dados locais. Para 
 
 ## 🛡️ 2. Segurança e Hardening
 Um SDK profissional deve garantir a integridade dos dados e do ambiente:
-- [ ] **Segurança de Armazenamento**: Implementar o **Jetpack Security (EncryptedSharedPreferences)** no módulo `:core:datastore` para dados sensíveis.
-- [ ] **Root/Emulator Detection**: Adicionar detecção de ambiente inseguro no rastreador de saúde para invalidar métricas de performance suspeitas.
+- [x] **Segurança de Armazenamento**: Implementar o **Jetpack Security (EncryptedSharedPreferences)** no módulo `:core:datastore` para dados sensíveis.
+- [ ] **Core Network**: Criar `:core:network` com suporte nativo a **Certificate Pinning** e interceptores de segurança.
+- [x] **Root/Emulator Detection**: Adicionar detecção de ambiente inseguro no rastreador de saúde para invalidar métricas de performance suspeitas.
 
 ## 🛠️ 3. Developer Experience (DX) e Tooling
 Melhorar a produtividade de quem consome o SDK:
