@@ -7,10 +7,13 @@ import br.com.coderednt.coreapp.core.database.performance.DatabaseModuleInitiali
 import br.com.coderednt.coreapp.core.datastore.performance.DataStoreModuleInitializer
 import br.com.coderednt.coreapp.core.logging.performance.LoggingModuleInitializer
 import br.com.coderednt.coreapp.core.monitoring.performance.*
+import br.com.coderednt.coreapp.core.monitoring.resilience.StrictModeManager
 import br.com.coderednt.coreapp.core.navigation.performance.NavigationModuleInitializer
 import br.com.coderednt.coreapp.core.ui.performance.UiModuleInitializer
 import br.com.coderednt.coreapp.features.performance.performance.PerformanceModuleInitializer
+import br.com.coderednt.coreapp.util.BuildUtils
 import dagger.hilt.android.HiltAndroidApp
+import javax.inject.Inject
 
 /**
  * Ponto de entrada principal do aplicativo Core-Application.
@@ -21,6 +24,18 @@ import dagger.hilt.android.HiltAndroidApp
  */
 @HiltAndroidApp
 class MainApplication : BaseApplication() {
+
+    @Inject
+    lateinit var strictModeManager: StrictModeManager
+
+    override fun onCreate() {
+        super.onCreate()
+        
+        // Habilita o StrictMode apenas em builds de DEBUG para garantir resiliência de runtime
+        if (BuildUtils.isDebug) {
+            strictModeManager.enable()
+        }
+    }
 
     /**
      * Orquestra a inicialização dos módulos do SDK.
@@ -33,7 +48,7 @@ class MainApplication : BaseApplication() {
         appHealthTracker.sync {
             // --- INFRAESTRUTURA BASE (Essencial para o funcionamento do SDK) ---
             module<MonitoringModuleInitializer>()
-            module<LoggingModuleInitializer>() // Adicionado inicializador de logging
+            module<LoggingModuleInitializer>()
             module<CommonModuleInitializer>()
             
             // --- CORE SERVICES (Persistência, Analytics e Navegação) ---
@@ -49,7 +64,6 @@ class MainApplication : BaseApplication() {
 
         appHealthTracker.async {
             // Reservado para inicializações pesadas que não impedem a exibição da UI inicial.
-            // Exemplo: Pré-carregamento de cache, logs de auditoria não críticos, etc.
         }
     }
 }

@@ -104,6 +104,7 @@ dependencies {
     implementation(libs.hilt.android)
     implementation(libs.androidx.hilt.navigation.compose)
     ksp(libs.hilt.compiler)
+    debugImplementation(libs.leakcanary.android)
 
     // Test dependencies
     testImplementation(libs.junit)

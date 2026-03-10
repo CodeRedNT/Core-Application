@@ -10,13 +10,15 @@ Este guia centraliza a documentação técnica do Core-Application. Para facilit
     *   Detalhamento dos módulos `:core` e suas responsabilidades.
 3.  [**Fluxo de Inicialização**](docs/architecture/03-initializers.md)
     *   Safe Initializers, `ModuleInitializer` e DSL de startup.
-4.  [**Performance e UX**](docs/architecture/04-performance.md)
+4.  [**Networking e Segurança**](docs/architecture/08-network.md)
+    *   Configuração do Retrofit, interceptores de log e Certificate Pinning.
+5.  [**Performance e UX**](docs/architecture/04-performance.md)
     *   Navigation Compose, SplashScreen API e Metrics Performance.
-5.  [**Qualidade e Testes**](docs/architecture/05-quality.md)
+6.  [**Qualidade e Testes**](docs/architecture/05-quality.md)
     *   Detekt, Robolectric e Roborazzi (Snapshot Testing).
-6.  [**Convenções de Documentação**](docs/architecture/06-documentation.md)
+7.  [**Convenções de Documentação**](docs/architecture/06-documentation.md)
     *   Padrões de KDoc e Clean Code.
-7.  [**Logging e Telemetria**](docs/architecture/07-logging.md)
+8.  [**Logging e Telemetria**](docs/architecture/07-logging.md)
     *   Logging estruturado, Timber e rastreamento de erros silenciosos.
 
 ---

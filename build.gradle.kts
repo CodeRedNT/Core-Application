@@ -6,6 +6,7 @@ plugins {
     alias(libs.plugins.google.devtools.ksp) apply false
     alias(libs.plugins.hilt) apply false
     alias(libs.plugins.detekt)
+    alias(libs.plugins.binary.compatibility.validator)
 }
 
 subprojects {
@@ -17,4 +18,11 @@ subprojects {
         allRules = false
         autoCorrect = true
     }
+}
+
+apiValidation {
+    /**
+     * Módulos que não expõem APIs públicas para consumo externo podem ser ignorados.
+     */
+    ignoredProjects.addAll(listOf("app", "lint"))
 }

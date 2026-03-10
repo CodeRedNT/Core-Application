@@ -2,6 +2,8 @@ package br.com.coderednt.coreapp.core.navigation
 
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -21,18 +23,32 @@ class ComposeNavigatorTest {
     @Test
     fun `navigate should emit Navigate command`() = runTest {
         val route = "home"
+        
+        // Usamos um dispatcher sem confinamento para capturar o evento imediatamente
+        val results = mutableListOf<NavigationCommand>()
+        val job = launch(UnconfinedTestDispatcher()) {
+            navigator.navigationEvents.collect { results.add(it) }
+        }
+
         navigator.navigate(route)
 
-        val event = navigator.navigationEvents.first()
-        assertTrue(event is NavigationCommand.Navigate)
-        assertEquals(route, (event as NavigationCommand.Navigate).route)
+        assertTrue(results.first() is NavigationCommand.Navigate)
+        assertEquals(route, (results.first() as NavigationCommand.Navigate).route)
+        
+        job.cancel()
     }
 
     @Test
     fun `navigateUp should emit NavigateUp command`() = runTest {
+        val results = mutableListOf<NavigationCommand>()
+        val job = launch(UnconfinedTestDispatcher()) {
+            navigator.navigationEvents.collect { results.add(it) }
+        }
+
         navigator.navigateUp()
 
-        val event = navigator.navigationEvents.first()
-        assertTrue(event is NavigationCommand.NavigateUp)
+        assertTrue(results.first() is NavigationCommand.NavigateUp)
+        
+        job.cancel()
     }
 }

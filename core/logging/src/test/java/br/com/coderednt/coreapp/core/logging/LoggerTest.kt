@@ -11,7 +11,9 @@ import org.junit.Test
 class LoggerTest {
 
     private val healthTracker: AppHealthTracker = mockk(relaxed = true)
-    private val lazyHealthTracker = Lazy { healthTracker }
+    private val lazyHealthTracker: Lazy<AppHealthTracker> = mockk {
+        every { get() } returns healthTracker
+    }
     private lateinit var logger: LoggerImpl
 
     @Before
@@ -20,21 +22,21 @@ class LoggerTest {
     }
 
     @Test
-    fun `error log should notify health tracker`() {
+    fun `logAndTrack should notify health tracker`() {
         val errorMessage = "Critical Failure"
         
-        logger.e(message = errorMessage)
+        logger.logAndTrack(message = errorMessage)
 
         verify { healthTracker.trackError(errorMessage) }
     }
 
     @Test
-    fun `error log with args should notify health tracker with formatted message`() {
+    fun `logAndTrack with args should notify health tracker with formatted message`() {
         val messageTemplate = "Failure in %s"
         val arg = "Database"
         val expectedMessage = "Failure in Database"
 
-        logger.e(message = messageTemplate, args = arrayOf(arg))
+        logger.logAndTrack(message = messageTemplate, args = arrayOf(arg))
 
         verify { healthTracker.trackError(expectedMessage) }
     }

@@ -40,6 +40,8 @@ android {
 
 dependencies {
     implementation(project(":monitoring"))
+    lintChecks(project(":lint")) // Aplica as regras de lint customizadas neste módulo
+
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.androidx.activity.compose)

@@ -24,6 +24,7 @@ O projeto adota uma estratégia de **Modularização por Camadas e Funcionalidad
 | `:common` | Utilitários compartilhados, extensões e helpers (Tempo, Strings, etc). | `TimeUtils.nowNanos()` |
 | `:monitoring` | Contratos de monitoramento e interfaces de métricas. | `interface PerformanceMonitor` |
 | `:logging` | Logging estruturado com integração automática ao tracker de saúde. | `logger.logAndTrack(e, "Erro")` |
+| `:network` | Infraestrutura de rede robusta com Retrofit, OkHttp e Moshi. | `Retrofit.create(MyApi::class.java)` |
 | `:domain` | Regras de negócio puras (Kotlin-only), UseCases e Entidades. | `class GetUserDataUseCase(...)` |
 | `:ui` | Design System, componentes Compose customizados e temas. | `CoreAppTheme { ... }` |
 | `:navigation` | Infraestrutura de navegação baseada em rotas e monitoramento. | `AppNavigator.navigate(Route.Profile)` |
@@ -41,10 +42,14 @@ O projeto adota uma estratégia de **Modularização por Camadas e Funcionalidad
 
 ## 🔐 Segurança e Hardening
 
-O SDK inclui suporte nativo para armazenamento criptografado utilizando o **Android Keystore**.
+O SDK inclui suporte nativo para armazenamento criptografado utilizando o **Android Keystore** e segurança de rede.
 ```kotlin
+// Armazenamento Seguro
 @Inject lateinit var secureStorage: SecureStorageRepository
 secureStorage.saveString("auth_token", "encrypted_data")
+
+// Rede Segura (Configurado no NetworkModule)
+// Suporte a Certificate Pinning e Interceptores de Log.
 ```
 
 ---
@@ -67,3 +72,6 @@ class MyModuleInitializer @Inject constructor() : ModuleInitializer {
 - [Guia de Arquitetura](ARCHITECTURE_GUIDE.md)
 - [Roadmap de Revisão](ROADMAP_REVIEW.md)
 - [Próximos Passos](next_steps.md)
+
+---
+*Copyright © 2025 CodeRedNT*
